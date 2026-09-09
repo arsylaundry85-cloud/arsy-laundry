@@ -946,4 +946,23 @@ document.addEventListener("DOMContentLoaded", function () {
   setupReportInteractions();
   setupServiceInteractions();
 });
-    
+ function setupTransactionTabs() {
+  const transactionPage = document.getElementById("transactionsPage");
+  if (!transactionPage) return;
+  const tabs = transactionPage.querySelectorAll(".transaction-tabs-container button, .transaction-tabs-container div, [style*='display: flex'] button");
+  
+  tabs.forEach(tab => {
+    if (!tab.dataset.boundTab) {
+      tab.dataset.boundTab = "true";
+      tab.style.cursor = "pointer";
+      tab.onclick = () => {
+        const text = tab.textContent.trim();
+        if (["Semua", "Antrian", "Proses", "Siap Diambil", "Selesai"].includes(text)) {
+          currentTransactionFilter = text;
+          renderAllTransactions();
+        }
+      };
+    }
+  });
+ }
+
