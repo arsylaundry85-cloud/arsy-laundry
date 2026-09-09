@@ -221,30 +221,6 @@ function injectTransactionModalHTML() {
   }
 }
 
-function injectEditTransactionItemModalHTML() {
-  if (document.getElementById("editTransactionItemModal")) return;
-  const modal = document.createElement("div");
-  modal.id = "editTransactionItemModal";
-  modal.className = "modal";
-  modal.innerHTML = `
-    <div class="modal-content" style="background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 360px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="font-size:18px; font-weight:bold;">Ubah Layanan</h3>
-        <button type="button" onclick="closeEditTransactionItemModal()" style="background:none; border:none; font-size:22px; cursor:pointer;">&times;</button>
-      </div>
-      <form id="editTransactionItemForm" onsubmit="saveEditTransactionItem(event)">
-        <div style="margin-bottom: 12px;"><label style="font-size: 13px; color: var(--muted);" id="editItemNameLabel">Layanan</label></div>
-        <div style="margin-bottom: 16px;">
-          <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px;">Berat / Jumlah (<span id="editItemUnitLabel">kg</span>)</label>
-          <input type="number" step="any" id="editItemWeightInput" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; text-align: center;" required>
-        </div>
-        <button type="submit" class="submit-button" style="background: var(--primary); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Simpan</button>
-      </form>
-    </div>
-  `;
-  document.body.appendChild(modal);
-}
-
 function openAddServiceToTransactionModal() {
   const container = document.getElementById("serviceSelectionList");
   if (!container) return;
@@ -363,10 +339,10 @@ function setupAkunOutletLink() {
       el.onclick = () => openOutletPage();
     }
   });
-                                                     }
+}
 function saveServicesData() {
   safeStorage.setItem("arsyServices", JSON.stringify(servicePrices));
-  saveData(); // <--- FIX UTAMA: Otomatis sinkron dan simpan permanen ke Google Sheet/Cloud
+  saveData(); // <--- Sinkronisasi otomatis ke Google Sheet/Cloud agar tidak hilang saat refresh
 }
 
 function renderServices() {
@@ -444,7 +420,7 @@ function saveRichService(e) {
   if (oldName && oldName !== newName) delete servicePrices[oldName];
 
   servicePrices[newName] = { price, unit, processes, duration, minQty, pinned };
-  saveServicesData(); // Memanggil fungsi save yang sudah mencakup sinkronisasi Cloud
+  saveServicesData(); 
   renderServices();
   closeServiceModal();
   showToast("Layanan berhasil disimpan");
@@ -599,4 +575,4 @@ document.addEventListener("DOMContentLoaded", function () {
   setupForm();
   setupAkunOutletLink();
 });
-            
+                                                          
