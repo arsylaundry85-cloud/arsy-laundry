@@ -158,6 +158,55 @@ async function saveData() {
     });
   } catch (err) {}
 }
+function injectTransactionSearch() {
+  const transactionPage = document.getElementById("transactionsPage");
+  if (!transactionPage) return;
+  const tabContainer = transactionPage.querySelector(".transaction-tabs-container");
+  if (!tabContainer || document.getElementById("transactionSearchInput")) return;
+
+  const searchWrapper = document.createElement("div");
+  searchWrapper.style.cssText = "padding: 10px 15px; background: white; border-bottom: 1px solid var(--border);";
+  searchWrapper.innerHTML = `
+    <div style="position: relative;">
+      <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;">🔍</span>
+      <input type="text" id="transactionSearchInput" placeholder="Cari nama pelanggan..." 
+        style="width: 100%; padding: 10px 10px 10px 35px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none;"
+        onkeyup="renderAllTransactions()">
+    </div>
+  `;
+  tabContainer.insertAdjacentElement("afterend", searchWrapper);
+}
+
+function loadNotaSettingsUI() {
+  if(document.getElementById("setHideLogo")) document.getElementById("setHideLogo").checked = notaSettings.hideLogo;
+  if(document.getElementById("setHideOutlet")) document.getElementById("setHideOutlet").checked = notaSettings.hideOutlet;
+  if(document.getElementById("setHideAddress")) document.getElementById("setHideAddress").checked = notaSettings.hideAddress;
+  if(document.getElementById("setHideCashier")) document.getElementById("setHideCashier").checked = notaSettings.hideCashier;
+  if(document.getElementById("setHideCustomer")) document.getElementById("setHideCustomer").checked = notaSettings.hideCustomer;
+  if(document.getElementById("setShowCategory")) document.getElementById("setShowCategory").checked = notaSettings.showCategory;
+  if(document.getElementById("setHideMessage")) document.getElementById("setHideMessage").checked = notaSettings.hideMessage;
+  if(document.getElementById("setHideParfum")) document.getElementById("setHideParfum").checked = notaSettings.hideParfum;
+  if(document.getElementById("setHidePowered")) document.getElementById("setHidePowered").checked = notaSettings.hidePowered;
+  if(document.getElementById("setShowEstDay")) document.getElementById("setShowEstDay").checked = notaSettings.showEstDay;
+}
+
+function saveNotaSettings() {
+  notaSettings.hideLogo = document.getElementById("setHideLogo").checked;
+  notaSettings.hideOutlet = document.getElementById("setHideOutlet").checked;
+  notaSettings.hideAddress = document.getElementById("setHideAddress").checked;
+  notaSettings.hideCashier = document.getElementById("setHideCashier").checked;
+  notaSettings.hideCustomer = document.getElementById("setHideCustomer").checked;
+  notaSettings.showCategory = document.getElementById("setShowCategory").checked;
+  notaSettings.hideMessage = document.getElementById("setHideMessage").checked;
+  notaSettings.hideParfum = document.getElementById("setHideParfum").checked;
+  notaSettings.hidePowered = document.getElementById("setHidePowered").checked;
+  notaSettings.showEstDay = document.getElementById("setShowEstDay").checked;
+
+  safeStorage.setItem("arsyNotaSettings", JSON.stringify(notaSettings));
+  saveData();
+  showToast("Pengaturan nota disimpan");
+}
+
 function injectTransactionModalHTML() {
   let modal = document.getElementById("transactionModal");
   if (!modal) {
@@ -306,6 +355,14 @@ function injectCustomerModules() {
     div.innerHTML = `<div style="padding: 15px; background: white; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border);"><button onclick="showPage('dashboardPage')" style="background:none; border:none; font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button><h2 style="font-size: 16px; font-weight: bold;">Daftar Pelanggan</h2></div><div style="padding: 15px;" id="customersListContainer"></div>`;
     document.body.appendChild(div);
   }
+
+  if (!document.getElementById("dashboardDetailPage")) {
+    const div = document.createElement("div");
+    div.id = "dashboardDetailPage";
+    div.className = "page";
+    div.innerHTML = `<div style="padding: 15px; background: white; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border);"><button onclick="showPage('dashboardPage')" style="background:none; border:none; font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button><h2 id="dashDetailTitle" style="font-size: 16px; font-weight: bold;">Rincian</h2></div><div style="padding: 15px;" id="dashDetailContent"></div>`;
+    document.body.appendChild(div);
+  }
 }
 
 function injectOutletModule() {
@@ -339,10 +396,10 @@ function setupAkunOutletLink() {
       el.onclick = () => openOutletPage();
     }
   });
-}
+      }
 function saveServicesData() {
   safeStorage.setItem("arsyServices", JSON.stringify(servicePrices));
-  saveData(); // <--- Sinkronisasi otomatis ke Google Sheet/Cloud agar tidak hilang saat refresh
+  saveData(); // Sinkronisasi otomatis ke Google Sheet saat layanan ditambah/diubah/dihapus
 }
 
 function renderServices() {
@@ -474,6 +531,7 @@ function renderAll() {
   renderRecentTransactions();
   renderAllTransactions();
   renderServices();
+  setupDashboardInteractions();
   removeProElements();
 }
 
@@ -524,7 +582,63 @@ function renderAllTransactions() {
   if (currentTransactionFilter !== 'Semua') {
     filtered = filtered.filter(item => item.status && item.status.toLowerCase().includes(currentTransactionFilter.toLowerCase()));
   }
+  const searchInput = document.getElementById("transactionSearchInput");
+  if (searchInput && searchInput.value) {
+    const q = searchInput.value.toLowerCase().trim();
+    filtered = filtered.filter(item => item.customerName && item.customerName.toLowerCase().includes(q));
+  }
   element.innerHTML = filtered.map(transactionHTML).join("") || `<div class="empty-state">Tidak ada transaksi</div>`;
+}
+
+function openDashboardDetail(type) {
+  const titleEl = document.getElementById("dashDetailTitle");
+  const contentEl = document.getElementById("dashDetailContent");
+  if (!contentEl) return;
+
+  let filtered = [];
+  let titleText = "";
+  let summaryHTML = "";
+
+  if (type === 'omset') {
+    titleText = "Rincian Omset Hari Ini";
+    filtered = transactions.filter(item => item.status !== "Batal" && (item.paymentStatus === "Lunas" || (item.paidAmount && item.paidAmount > 0)) && isToday(item.paymentDate || item.date));
+    let totalOmset = filtered.reduce((sum, item) => sum + (item.paymentStatus === "Lunas" ? item.total : (item.paidAmount || 0)), 0);
+    summaryHTML = `<div style="background: white; padding: 15px; border-radius: 13px; border: 1px solid var(--border); margin-bottom: 16px;"><p style="font-size: 12px; color: var(--muted); font-weight: bold;">RINGKASAN OMSET</p><b style="font-size: 16px; color: var(--primary);">${formatRupiah(totalOmset)}</b> (${filtered.length} Transaksi)</div>`;
+  } else if (type === 'transaksi') {
+    titleText = "Rincian Transaksi Hari Ini";
+    filtered = transactions.filter(item => isToday(item.date) && item.status !== "Batal");
+    summaryHTML = `<div style="background: white; padding: 15px; border-radius: 13px; border: 1px solid var(--border); margin-bottom: 16px;"><p style="font-size: 12px; color: var(--muted); font-weight: bold;">RINGKASAN TRANSAKSI</p><b style="font-size: 16px; color: var(--primary);">${filtered.length} Transaksi Hari Ini</b></div>`;
+  } else if (type === 'pending') {
+    titleText = "Rincian Belum Selesai";
+    filtered = transactions.filter(item => item.status !== "Batal" && !item.status.toLowerCase().includes("selesai"));
+    summaryHTML = `<div style="background: white; padding: 15px; border-radius: 13px; border: 1px solid var(--border); margin-bottom: 16px;"><p style="font-size: 12px; color: var(--muted); font-weight: bold;">RINGKASAN BELUM SELESAI</p><b style="font-size: 16px; color: var(--primary);">${filtered.length} Transaksi</b></div>`;
+  }
+
+  if (titleEl) titleEl.textContent = titleText;
+  contentEl.innerHTML = `${summaryHTML}<h4 style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">Daftar Transaksi</h4>${filtered.length === 0 ? '<div class="empty-state">Belum ada data</div>' : filtered.map(transactionHTML).join("")}`;
+  showPage("dashboardDetailPage");
+}
+
+function setupDashboardInteractions() {
+  const targets = [
+    { id: 'todayIncome', handler: () => openDashboardDetail('omset') },
+    { id: 'todayTransactions', handler: () => openDashboardDetail('transaksi') },
+    { id: 'pendingTransactions', handler: () => openDashboardDetail('pending') },
+    { id: 'totalCustomers', handler: () => showPage('customerPage') }
+  ];
+
+  targets.forEach(({ id, handler }) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const card = el.parentElement.parentElement.children.length <= 3 ? el.parentElement.parentElement : el.parentElement;
+    if (card) {
+      card.style.cursor = 'pointer';
+      card.onclick = (e) => {
+        e.stopPropagation();
+        handler();
+      };
+    }
+  });
 }
 
 function showPage(pageId) {
@@ -533,6 +647,11 @@ function showPage(pageId) {
   const target = document.getElementById(pageId);
   if (target) target.classList.add("active");
   window.scrollTo(0, 0);
+  if (pageId === 'transactionsPage') {
+    const searchInput = document.getElementById("transactionSearchInput");
+    if (searchInput) searchInput.value = "";
+    renderAllTransactions();
+  }
 }
 
 function openTransactionDetail(id) {
@@ -570,9 +689,11 @@ document.addEventListener("DOMContentLoaded", function () {
   injectCustomerModules();
   injectOutletModule();
   injectTransactionModalHTML();
+  injectTransactionSearch();
   renderAll();
   loadFromCloud();
   setupForm();
   setupAkunOutletLink();
+  setupDashboardInteractions();
 });
-                                                          
+    
