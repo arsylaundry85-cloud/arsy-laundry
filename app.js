@@ -1930,9 +1930,15 @@ function openTransactionDetail(id) {
       </div>
     </div>
 
-    <button type="button" class="submit-button" style="background: var(--success); margin-bottom: 12px;" onclick="openPaymentModal(${item.id})">
+        <button type="button" class="submit-button" style="background: var(--success); margin-bottom: 12px;" onclick="openPaymentModal(${item.id})">
       Bayar
     </button>
+
+    ${(isLunas || isDP) ? `
+    <button type="button" class="submit-button" style="background: #dc2626; margin-bottom: 12px;" onclick="openCancelPaymentModal(${item.id})">
+      Batalkan Pembayaran
+    </button>` : ''}
+
 
     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
       <button type="button" class="submit-button" style="flex: 1; background: #475569;" onclick="printReceipt(${item.id})">Cetak Nota</button>
@@ -2143,4 +2149,21 @@ function verifyPin() {
     showToast("PIN salah!");
   }
       }
+function openCancelPaymentModal(id) {
+  activeTransactionId = id;
+  const item = transactions.find(t => t.id === id);
+  if (!item) return;
+  
+  if (confirm("Batalkan pembayaran untuk transaksi ini? Status akan kembali menjadi Belum Lunas.")) {
+    item.paymentStatus = "Belum Lunas";
+    item.paidAmount = 0;
+    item.paymentMethod = "-";
+    item.paymentDate = null;
+    
+    saveData();
+    renderAll();
+    openTransactionDetail(id);
+    showToast("Pembayaran berhasil dibatalkan");
+  }
+}
 
