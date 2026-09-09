@@ -479,7 +479,7 @@ function setupAkunOutletLink() {
     }
   });
 }
-  function saveServicesData() {
+function saveServicesData() {
   safeStorage.setItem("arsyServices", JSON.stringify(servicePrices));
   saveData();
 }
@@ -625,6 +625,7 @@ function renderAll() {
   renderServices();
   setupDashboardInteractions();
   setupReportInteractions();
+  setupServiceInteractions();
   removeProElements();
 }
 
@@ -681,8 +682,7 @@ function renderAllTransactions() {
     filtered = filtered.filter(item => item.customerName && item.customerName.toLowerCase().includes(q));
   }
   element.innerHTML = filtered.map(transactionHTML).join("") || `<div class="empty-state">Tidak ada transaksi</div>`;
-}
-
+                                                                                          }
 let activeReportType = 'omset';
 
 function openReportDetail(type) {
@@ -787,7 +787,6 @@ function renderReportData() {
 function setupReportInteractions() {
   const reportPage = document.getElementById("laporanPage");
   if (!reportPage) return;
-  const rows = reportPage.querySelectorAll("div[style*='cursor'], div[onclick], div");
   reportPage.querySelectorAll("div").forEach(el => {
     const text = el.textContent.trim();
     if (text.includes("Laporan Omset Transaksi") && !el.dataset.bound) {
@@ -814,6 +813,25 @@ function setupReportInteractions() {
       el.dataset.bound = "true";
       el.style.cursor = "pointer";
       el.onclick = () => openReportDetail('pembayaran');
+    }
+  });
+}
+
+function setupServiceInteractions() {
+  const dashPage = document.getElementById("dashboardPage");
+  if (!dashPage) return;
+  dashPage.querySelectorAll("div, span, a, p").forEach(el => {
+    const text = el.textContent.trim();
+    if (text === "Layanan" && !el.dataset.boundService) {
+      let card = el.closest("div[style*='cursor']") || el.closest("div");
+      if (card) {
+        el.dataset.boundService = "true";
+        card.style.cursor = "pointer";
+        card.onclick = (e) => {
+          e.stopPropagation();
+          openServiceModal();
+        };
+      }
     }
   });
 }
@@ -892,4 +910,40 @@ function openTransactionDetail(id) {
   container.innerHTML = `
     <div class="report-card" style="margin-bottom: 16px;">
       <p><b>No. Transaksi:</b> TRX/${item.id}</p>
-      <p><b>Pelanggan:</b> ${esca
+      <p><b>Pelanggan:</b> ${escapeHTML(item.customerName)}</p>
+      <p><b>Total:</b> ${formatRupiah(item.total)}</p>
+      <p><b>Status:</b> ${item.status}</p>
+    </div>
+    <button type="button" class="submit-button" style="background: var(--primary); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;" onclick="showPage('transactionsPage')">Kembali</button>
+  `;
+  showPage("transactionDetailPage");
+}
+
+function showToast(msg) {
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2500);
+}
+
+function escapeHTML(text) {
+  return String(text).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  injectCustomerModules();
+  injectOutletModule();
+  injectTransactionModalHTML();
+  injectServiceModalHTML();
+  injectTransactionSearch();
+  injectReportPageHTML();
+  renderAll();
+  loadFromCloud();
+  setupForm();
+  setupAkunOutletLink();
+  setupDashboardInteractions();
+  setupReportInteractions();
+  setupServiceInteractions();
+});
+    
