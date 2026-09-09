@@ -158,6 +158,118 @@ async function saveData() {
     });
   } catch (err) {}
 }
+function injectReportPageHTML() {
+  if (document.getElementById("reportDetailPage")) return;
+  const div = document.createElement("div");
+  div.id = "reportDetailPage";
+  div.className = "page";
+  div.innerHTML = `
+    <div style="padding: 15px; background: white; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border);">
+      <button onclick="showPage('laporanPage')" style="background:none; border:none; font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
+      <h2 id="reportDetailTitle" style="font-size: 16px; font-weight: bold;">Laporan</h2>
+    </div>
+    <div style="padding: 15px;">
+      <div id="reportSummaryCards" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;"></div>
+      <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 15px;">
+        <p style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">Filter Laporan</p>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <select id="reportFilterPayment" onchange="renderReportData()" style="padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;">
+            <option value="Semua">Semua Metode Pembayaran</option>
+            <option value="Tunai">Tunai</option>
+            <option value="GoPay">GoPay</option>
+            <option value="Dana">Dana</option>
+            <option value="ShopeePay">ShopeePay</option>
+            <option value="QRIS">QRIS</option>
+            <option value="Transfer">Transfer</option>
+          </select>
+          <select id="reportFilterStatus" onchange="renderReportData()" style="padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;">
+            <option value="Semua">Semua Status</option>
+            <option value="Belum Lunas">Belum Lunas</option>
+            <option value="Lunas">Lunas</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <b style="font-size: 14px;">Data Transaksi</b>
+          <span id="reportItemCount" style="font-size: 12px; color: var(--muted);">0 transaksi</span>
+        </div>
+        <div id="reportTransactionsList"></div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(div);
+}
+
+function injectServiceModalHTML() {
+  let modal = document.getElementById("serviceModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "serviceModal";
+    modal.className = "modal";
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div class="modal-content" style="background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 400px; max-height: 90vh; overflow-y: auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 id="serviceModalTitle" style="font-size:18px; font-weight:bold;">Tambah Layanan</h3>
+        <button type="button" onclick="closeServiceModal()" style="background:none; border:none; font-size:22px; cursor:pointer;">&times;</button>
+      </div>
+      <form onsubmit="saveRichService(event)">
+        <input type="hidden" id="editServiceOldName">
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px;">Nama Layanan</label>
+          <input type="text" id="srvName" placeholder="Contoh: Cuci Kering" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;" required autocomplete="off">
+        </div>
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 6px;">Proses Laundry</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+            <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" name="srvProcess" value="Cuci"> Cuci</label>
+            <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" name="srvProcess" value="Pengeringan"> Pengeringan</label>
+            <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" name="srvProcess" value="Setrika"> Setrika</label>
+            <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" name="srvProcess" value="Lipat"> Lipat</label>
+            <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" name="srvProcess" value="Packing"> Packing</label>
+          </div>
+        </div>
+        <div style="margin-bottom: 12px; display: flex; gap: 10px;">
+          <div style="flex: 2;">
+            <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px;">Harga (Rp)</label>
+            <input type="number" id="srvPrice" placeholder="0" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;" required>
+          </div>
+          <div style="flex: 1;">
+            <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px;">Satuan</label>
+            <select id="srvUnit" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
+              <option value="kg">kg</option>
+              <option value="pcs">pcs</option>
+              <option value="m²">m²</option>
+              <option value="set">set</option>
+              <option value="lembar">lembar</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom: 12px; display: flex; gap: 10px;">
+          <div style="flex: 1;">
+            <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px;">Durasi</label>
+            <input type="text" id="srvDuration" value="1 Hari" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
+          </div>
+          <div style="flex: 1;">
+            <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px;">Min. Kuantitas</label>
+            <input type="number" id="srvMinQty" value="1" step="any" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
+          </div>
+        </div>
+        <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="srvPinned" style="width: 18px; height: 18px;">
+          <label for="srvPinned" style="font-size: 13px; font-weight: bold; cursor: pointer;">Sematkan di Urutan Atas (Favorit/Utama)</label>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" id="btnDeleteService" onclick="deleteCurrentService()" style="display: none; background: #fee2e2; color: #dc2626; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1;">Hapus</button>
+          <button type="submit" class="submit-button" style="background: var(--primary); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; flex: 2;">Simpan</button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
 function injectTransactionSearch() {
   const transactionPage = document.getElementById("transactionsPage");
   if (!transactionPage) return;
@@ -175,36 +287,6 @@ function injectTransactionSearch() {
     </div>
   `;
   tabContainer.insertAdjacentElement("afterend", searchWrapper);
-}
-
-function loadNotaSettingsUI() {
-  if(document.getElementById("setHideLogo")) document.getElementById("setHideLogo").checked = notaSettings.hideLogo;
-  if(document.getElementById("setHideOutlet")) document.getElementById("setHideOutlet").checked = notaSettings.hideOutlet;
-  if(document.getElementById("setHideAddress")) document.getElementById("setHideAddress").checked = notaSettings.hideAddress;
-  if(document.getElementById("setHideCashier")) document.getElementById("setHideCashier").checked = notaSettings.hideCashier;
-  if(document.getElementById("setHideCustomer")) document.getElementById("setHideCustomer").checked = notaSettings.hideCustomer;
-  if(document.getElementById("setShowCategory")) document.getElementById("setShowCategory").checked = notaSettings.showCategory;
-  if(document.getElementById("setHideMessage")) document.getElementById("setHideMessage").checked = notaSettings.hideMessage;
-  if(document.getElementById("setHideParfum")) document.getElementById("setHideParfum").checked = notaSettings.hideParfum;
-  if(document.getElementById("setHidePowered")) document.getElementById("setHidePowered").checked = notaSettings.hidePowered;
-  if(document.getElementById("setShowEstDay")) document.getElementById("setShowEstDay").checked = notaSettings.showEstDay;
-}
-
-function saveNotaSettings() {
-  notaSettings.hideLogo = document.getElementById("setHideLogo").checked;
-  notaSettings.hideOutlet = document.getElementById("setHideOutlet").checked;
-  notaSettings.hideAddress = document.getElementById("setHideAddress").checked;
-  notaSettings.hideCashier = document.getElementById("setHideCashier").checked;
-  notaSettings.hideCustomer = document.getElementById("setHideCustomer").checked;
-  notaSettings.showCategory = document.getElementById("setShowCategory").checked;
-  notaSettings.hideMessage = document.getElementById("setHideMessage").checked;
-  notaSettings.hideParfum = document.getElementById("setHideParfum").checked;
-  notaSettings.hidePowered = document.getElementById("setHidePowered").checked;
-  notaSettings.showEstDay = document.getElementById("setShowEstDay").checked;
-
-  safeStorage.setItem("arsyNotaSettings", JSON.stringify(notaSettings));
-  saveData();
-  showToast("Pengaturan nota disimpan");
 }
 
 function injectTransactionModalHTML() {
@@ -396,10 +478,10 @@ function setupAkunOutletLink() {
       el.onclick = () => openOutletPage();
     }
   });
-      }
-function saveServicesData() {
+}
+  function saveServicesData() {
   safeStorage.setItem("arsyServices", JSON.stringify(servicePrices));
-  saveData(); // Sinkronisasi otomatis ke Google Sheet saat layanan ditambah/diubah/dihapus
+  saveData();
 }
 
 function renderServices() {
@@ -408,16 +490,23 @@ function renderServices() {
   const sortedNames = getSortedServiceNames();
   element.innerHTML = sortedNames.map(name => {
     const data = servicePrices[name];
+    const processesStr = (data.processes || []).join(" - ");
+    const subtitle = processesStr ? `${processesStr} • Min. ${data.minQty || 1} ${data.unit} • ${data.duration || '1 Hari'}` : `${formatRupiah(data.price)} / ${data.unit}`;
     return `
       <div style="background: white; border-radius: 13px; padding: 15px; margin-top: 10px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="openEditServiceModal('${escapeHTML(name)}')">
-        <div><b>${escapeHTML(name)}</b><br><small style="color:var(--muted);">${formatRupiah(data.price)} / ${data.unit}</small></div>
-        <span style="font-size: 11px; color: var(--primary); font-weight: 500;">Ubah</span>
+        <div>
+          <b>${escapeHTML(name)}</b><br>
+          <span style="color:var(--primary); font-weight:bold; font-size:13px;">${formatRupiah(data.price)} / ${data.unit}</span><br>
+          <small style="color:var(--muted);">${escapeHTML(subtitle)}</small>
+        </div>
+        <span style="font-size: 12px; color: var(--primary); font-weight: bold;">Ubah</span>
       </div>
     `;
   }).join("");
 }
 
 function openServiceModal() {
+  injectServiceModalHTML();
   const modal = document.getElementById("serviceModal");
   if (!modal) return;
   document.getElementById("serviceModalTitle").textContent = "Tambah Layanan";
@@ -429,11 +518,13 @@ function openServiceModal() {
   document.getElementById("srvUnit").value = "kg";
   document.getElementById("srvPinned").checked = false;
   document.querySelectorAll("input[name='srvProcess']").forEach(cb => cb.checked = false);
-  document.getElementById("btnDeleteService").style.display = "none";
+  const btnDelete = document.getElementById("btnDeleteService");
+  if (btnDelete) btnDelete.style.display = "none";
   modal.classList.add("show");
 }
 
 function openEditServiceModal(name) {
+  injectServiceModalHTML();
   const srv = servicePrices[name];
   if (!srv) return;
   const modal = document.getElementById("serviceModal");
@@ -449,7 +540,8 @@ function openEditServiceModal(name) {
   document.querySelectorAll("input[name='srvProcess']").forEach(cb => {
     cb.checked = (srv.processes || []).includes(cb.value);
   });
-  document.getElementById("btnDeleteService").style.display = "block";
+  const btnDelete = document.getElementById("btnDeleteService");
+  if (btnDelete) btnDelete.style.display = "block";
   modal.classList.add("show");
 }
 
@@ -532,6 +624,7 @@ function renderAll() {
   renderAllTransactions();
   renderServices();
   setupDashboardInteractions();
+  setupReportInteractions();
   removeProElements();
 }
 
@@ -588,6 +681,141 @@ function renderAllTransactions() {
     filtered = filtered.filter(item => item.customerName && item.customerName.toLowerCase().includes(q));
   }
   element.innerHTML = filtered.map(transactionHTML).join("") || `<div class="empty-state">Tidak ada transaksi</div>`;
+}
+
+let activeReportType = 'omset';
+
+function openReportDetail(type) {
+  activeReportType = type;
+  injectReportPageHTML();
+  const titleEl = document.getElementById("reportDetailTitle");
+  if (!titleEl) return;
+
+  const titles = {
+    'omset': 'Laporan Omset Transaksi',
+    'masuk': 'Laporan Transaksi Masuk',
+    'lunas': 'Laporan Transaksi Lunas',
+    'selesai': 'Laporan Transaksi Selesai',
+    'batal': 'Laporan Transaksi Batal',
+    'pembayaran': 'Laporan Pembayaran'
+  };
+  titleEl.textContent = titles[type] || 'Laporan';
+  
+  if(document.getElementById("reportFilterPayment")) document.getElementById("reportFilterPayment").value = "Semua";
+  if(document.getElementById("reportFilterStatus")) document.getElementById("reportFilterStatus").value = "Semua";
+
+  renderReportData();
+  showPage('reportDetailPage');
+}
+
+function renderReportData() {
+  const type = activeReportType;
+  const payFilter = document.getElementById("reportFilterPayment")?.value || "Semua";
+  const statFilter = document.getElementById("reportFilterStatus")?.value || "Semua";
+
+  let filtered = transactions;
+  if (type === 'omset') {
+    filtered = filtered.filter(item => item.status !== "Batal" && (item.paymentStatus === "Lunas" || (item.paidAmount && item.paidAmount > 0)));
+  } else if (type === 'lunas') {
+    filtered = filtered.filter(item => item.paymentStatus === "Lunas" && item.status !== "Batal");
+  } else if (type === 'selesai') {
+    filtered = filtered.filter(item => item.status && item.status.toLowerCase().includes("selesai"));
+  } else if (type === 'batal') {
+    filtered = filtered.filter(item => item.status === "Batal");
+  } else if (type === 'pembayaran') {
+    filtered = filtered.filter(item => item.status !== "Batal");
+  }
+
+  if (payFilter !== 'Semua') {
+    filtered = filtered.filter(item => item.paymentMethod === payFilter);
+  }
+  if (statFilter !== 'Semua') {
+    filtered = filtered.filter(item => item.paymentStatus === statFilter);
+  }
+
+  let totalPendapatan = filtered.reduce((sum, item) => sum + (item.paymentStatus === 'Lunas' ? item.total : (item.paidAmount || 0)), 0);
+  let selesaiLunasCount = transactions.filter(item => item.status !== "Batal" && (item.paymentStatus === "Lunas" || item.status.toLowerCase().includes("selesai"))).length;
+  let batalCount = transactions.filter(item => item.status === "Batal").length;
+
+  const cardsContainer = document.getElementById("reportSummaryCards");
+  if (cardsContainer) {
+    cardsContainer.innerHTML = `
+      <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px;">
+        <p style="font-size: 11px; color: var(--muted); font-weight: bold;">TOTAL PENDAPATAN</p>
+        <b style="font-size: 15px; color: var(--primary);">${formatRupiah(totalPendapatan)}</b>
+      </div>
+      <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px;">
+        <p style="font-size: 11px; color: var(--muted); font-weight: bold;">TOTAL TRANSAKSI</p>
+        <b style="font-size: 15px;">${transactions.length}</b>
+      </div>
+      <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px;">
+        <p style="font-size: 11px; color: var(--muted); font-weight: bold;">SELESAI / LUNAS</p>
+        <b style="font-size: 15px; color: #16a34a;">${selesaiLunasCount}</b>
+      </div>
+      <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px;">
+        <p style="font-size: 11px; color: var(--muted); font-weight: bold;">BATAL</p>
+        <b style="font-size: 15px; color: #dc2626;">${batalCount}</b>
+      </div>
+    `;
+  }
+
+  const countEl = document.getElementById("reportItemCount");
+  if (countEl) countEl.textContent = `${filtered.length} transaksi`;
+
+  const listContainer = document.getElementById("reportTransactionsList");
+  if (listContainer) {
+    listContainer.innerHTML = filtered.length === 0 ? '<div class="empty-state">Tidak ada transaksi</div>' : filtered.map(item => {
+      const itemsList = getTransactionItems(item);
+      const serviceSummary = itemsList.map(it => `${it.serviceType} (${it.weight})`).join(", ");
+      return `
+        <div onclick="openTransactionDetail(${item.id})" style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <b style="font-size: 14px; color: var(--primary);">${escapeHTML(item.customerName)}</b>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">${escapeHTML(serviceSummary)}</div>
+            <span style="font-size: 11px; color: #16a34a; font-weight: bold; display: inline-block; margin-top: 4px;">${item.paymentMethod || 'Tunai'}</span>
+          </div>
+          <div style="text-align: right;">
+            <b style="font-size: 14px;">${formatRupiah(item.total)}</b><br>
+            <span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: ${item.paymentStatus === 'Lunas' ? '#dcfce7' : '#fee2e2'}; color: ${item.paymentStatus === 'Lunas' ? '#16a34a' : '#dc2626'}; font-weight: bold; display: inline-block; margin-top: 4px;">${item.paymentStatus || 'Belum Lunas'}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+}
+
+function setupReportInteractions() {
+  const reportPage = document.getElementById("laporanPage");
+  if (!reportPage) return;
+  const rows = reportPage.querySelectorAll("div[style*='cursor'], div[onclick], div");
+  reportPage.querySelectorAll("div").forEach(el => {
+    const text = el.textContent.trim();
+    if (text.includes("Laporan Omset Transaksi") && !el.dataset.bound) {
+      el.dataset.bound = "true";
+      el.style.cursor = "pointer";
+      el.onclick = () => openReportDetail('omset');
+    } else if (text.includes("Laporan Transaksi Masuk") && !el.dataset.bound) {
+      el.dataset.bound = "true";
+      el.style.cursor = "pointer";
+      el.onclick = () => openReportDetail('masuk');
+    } else if (text.includes("Laporan Transaksi Lunas") && !el.dataset.bound) {
+      el.dataset.bound = "true";
+      el.style.cursor = "pointer";
+      el.onclick = () => openReportDetail('lunas');
+    } else if (text.includes("Laporan Transaksi Selesai") && !el.dataset.bound) {
+      el.dataset.bound = "true";
+      el.style.cursor = "pointer";
+      el.onclick = () => openReportDetail('selesai');
+    } else if (text.includes("Laporan Transaksi Batal") && !el.dataset.bound) {
+      el.dataset.bound = "true";
+      el.style.cursor = "pointer";
+      el.onclick = () => openReportDetail('batal');
+    } else if (text.includes("Laporan Pembayaran") && !el.dataset.bound) {
+      el.dataset.bound = "true";
+      el.style.cursor = "pointer";
+      el.onclick = () => openReportDetail('pembayaran');
+    }
+  });
 }
 
 function openDashboardDetail(type) {
@@ -664,36 +892,4 @@ function openTransactionDetail(id) {
   container.innerHTML = `
     <div class="report-card" style="margin-bottom: 16px;">
       <p><b>No. Transaksi:</b> TRX/${item.id}</p>
-      <p><b>Pelanggan:</b> ${escapeHTML(item.customerName)}</p>
-      <p><b>Total:</b> ${formatRupiah(item.total)}</p>
-      <p><b>Status:</b> ${item.status}</p>
-    </div>
-    <button type="button" class="submit-button" style="background: var(--primary); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;" onclick="showPage('transactionsPage')">Kembali</button>
-  `;
-  showPage("transactionDetailPage");
-}
-
-function showToast(msg) {
-  const toast = document.getElementById("toast");
-  if (!toast) return;
-  toast.textContent = msg;
-  toast.classList.add("show");
-  setTimeout(() => toast.classList.remove("show"), 2500);
-}
-
-function escapeHTML(text) {
-  return String(text).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-  injectCustomerModules();
-  injectOutletModule();
-  injectTransactionModalHTML();
-  injectTransactionSearch();
-  renderAll();
-  loadFromCloud();
-  setupForm();
-  setupAkunOutletLink();
-  setupDashboardInteractions();
-});
-    
+      <p><b>Pelanggan:</b> ${esca
