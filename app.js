@@ -346,6 +346,10 @@ function injectTransactionModalHTML() {
             <label style="font-size: 13px; font-weight: bold; color: var(--text);">Layanan Laundry</label>
             <button type="button" onclick="openAddServiceToTransactionModal()" style="background: #e1edff; color: var(--primary); border: none; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;">+ Tambah Layanan</button>
           </div>
+                  <div style="margin-bottom: 12px;">
+          <input type="text" id="serviceSearchInput" placeholder="Cari nama layanan..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline: none;" onkeyup="filterServiceSelectionList()">
+        </div>
+        
           <div id="transactionItemsContainer" style="border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: #f8fafc; min-height: 70px; max-height: 200px; overflow-y: auto;">
             <div style="color: var(--muted); font-size: 13px; text-align: center; padding: 15px;" id="emptyItemsText">Belum ada layanan dipilih</div>
           </div>
@@ -2165,5 +2169,30 @@ function openCancelPaymentModal(id) {
     openTransactionDetail(id);
     showToast("Pembayaran berhasil dibatalkan");
   }
+}
+function filterServiceSelectionList() {
+  const query = document.getElementById("serviceSearchInput").value.toLowerCase().trim();
+  const container = document.getElementById("serviceSelectionList");
+  if (!container) return;
+
+  const sortedNames = getSortedServiceNames().filter(name => name.toLowerCase().includes(query));
+  
+  if (sortedNames.length === 0) {
+    container.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--muted); font-size: 13px;">Layanan tidak ditemukan</div>`;
+    return;
+  }
+
+  container.innerHTML = sortedNames.map(name => {
+    const srv = servicePrices[name];
+    return `
+      <div onclick="addServiceToCurrentTransaction('${escapeHTML(name)}')" style="padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <b style="font-size: 14px; color: var(--text);">${escapeHTML(name)}</b>
+          <div style="font-size: 12px; color: var(--muted);">${formatRupiah(srv.price)} / ${srv.unit}</div>
+        </div>
+        <span style="color: var(--primary); font-size: 13px; font-weight: bold;">+ Pilih</span>
+      </div>
+    `;
+  }).join("");
 }
 
