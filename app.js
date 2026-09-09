@@ -1453,7 +1453,7 @@ function saveRichService(e) {
     pinned: pinned
   };
 
-  saveServicesData();
+  saveData();
   renderServices();
   closeServiceModal();
   showToast("Layanan berhasil diperbarui");
@@ -1464,7 +1464,7 @@ function deleteCurrentService() {
   if (!name) return;
   if (confirm(`Hapus layanan "${name}"?`)) {
     delete servicePrices[name];
-    saveServicesData();
+    saveData();
     renderServices();
     closeServiceModal();
     showToast("Layanan berhasil dihapus");
