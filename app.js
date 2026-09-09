@@ -239,9 +239,12 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString("id-ID", {
     day: "2-digit",
     month: "short",
-    year: "numeric"
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
   });
 }
+
 
 function calculateEstimationDate(dateStr, durationStr) {
   let date = new Date(dateStr);
