@@ -330,7 +330,7 @@ function injectTransactionModalHTML() {
     document.body.appendChild(modal);
   }
   modal.innerHTML = `
-    <div class="modal-content" style="background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+    <div class="modal-content" style="background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
         <h3 style="font-size:18px; font-weight:bold; color:var(--text);">Transaksi Baru</h3>
         <button type="button" onclick="closeTransactionModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted);">&times;</button>
@@ -344,14 +344,10 @@ function injectTransactionModalHTML() {
         <div style="margin-bottom: 12px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <label style="font-size: 13px; font-weight: bold; color: var(--text);">Layanan Laundry</label>
-            <button type="button" onclick="openAddServiceToTransactionModal()" style="background: #e1edff; color: var(--primary); border: none; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;">+ Tambah Layanan</button>
+            <button type="button" onclick="openAddServiceToTransactionModal()" style="background: var(--primary); color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: bold;">+ Tambah Layanan</button>
           </div>
-                  <div style="margin-bottom: 12px;">
-          <input type="text" id="serviceSearchInput" placeholder="Cari nama layanan..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline: none;" onkeyup="filterServiceSelectionList()">
-        </div>
-        
-          <div id="transactionItemsContainer" style="border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: #f8fafc; min-height: 70px; max-height: 200px; overflow-y: auto;">
-            <div style="color: var(--muted); font-size: 13px; text-align: center; padding: 15px;" id="emptyItemsText">Belum ada layanan dipilih</div>
+          <div id="transactionItemsContainer" style="border: 1px solid var(--border); border-radius: 8px; padding: 10px; min-height: 70px; max-height: 200px; overflow-y: auto;">
+            <div style="color: var(--muted); font-size: 13px; text-align: center; padding: 15px;">Belum ada layanan dipilih</div>
           </div>
         </div>
 
@@ -362,15 +358,11 @@ function injectTransactionModalHTML() {
             <option value="Proses">Proses</option>
             <option value="Siap Diambil">Siap Diambil</option>
             <option value="Selesai">Selesai</option>
+            <option value="Batal">Batal</option>
           </select>
         </div>
 
-        <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-weight: bold; font-size: 14px;">Total</span>
-          <b id="transactionTotalDisplay" style="color: var(--primary); font-size: 16px;">Rp 0</b>
-        </div>
-
-        <button type="submit" class="submit-button" style="background: var(--primary); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Simpan Transaksi</button>
+        <button type="submit" class="submit-button">Simpan Transaksi</button>
       </form>
     </div>
   `;
@@ -385,46 +377,14 @@ function injectTransactionModalHTML() {
           <h3 style="font-size:16px; font-weight:bold; color:var(--text);">Pilih Layanan</h3>
           <button type="button" onclick="closeAddServiceSelectModal()" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--muted);">&times;</button>
         </div>
+        <div style="margin-bottom: 12px;">
+          <input type="text" id="serviceSearchInput" placeholder="Cari nama layanan..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline: none;" onkeyup="filterServiceSelectionList()">
+        </div>
         <div id="serviceSelectionList"></div>
       </div>
     `;
     document.body.appendChild(subModal);
   }
-}function injectEditTransactionItemModalHTML() {
-  if (document.getElementById("editTransactionItemModal")) return;
-  const modal = document.createElement("div");
-  modal.id = "editTransactionItemModal";
-  modal.className = "modal";
-  modal.innerHTML = `
-    <div class="modal-content" style="background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 360px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 id="editItemModalTitle" style="font-size:18px; font-weight:bold; color:var(--text);">Ubah Layanan</h3>
-        <button type="button" onclick="closeEditTransactionItemModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted);">&times;</button>
-      </div>
-      <form id="editTransactionItemForm" onsubmit="saveEditTransactionItem(event)">
-        <div style="margin-bottom: 12px;">
-          <label style="font-size: 13px; color: var(--muted); display: block;" id="editItemNameLabel">Layanan</label>
-        </div>
-        <div style="margin-bottom: 16px;">
-          <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px; color: var(--text);">Berat / Jumlah (<span id="editItemUnitLabel">kg</span>)</label>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <button type="button" onclick="adjustEditItemWeight(-0.5)" style="background: #e1edff; color: var(--primary); border: none; width: 40px; height: 40px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;">-</button>
-            <input type="number" step="any" id="editItemWeightInput" style="flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; text-align: center;" required oninput="calculateEditItemPreview()">
-            <button type="button" onclick="adjustEditItemWeight(0.5)" style="background: #e1edff; color: var(--primary); border: none; width: 40px; height: 40px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;">+</button>
-          </div>
-        </div>
-        <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 13px; color: var(--muted);">Estimasi Total:</span>
-          <b id="editItemTotalPreview" style="color: var(--primary); font-size: 15px;">Rp 0</b>
-        </div>
-        <div style="display: flex; gap: 10px;">
-          <button type="submit" class="submit-button" style="flex: 1; background: var(--primary); color: white; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Simpan</button>
-          <button type="button" onclick="closeEditTransactionItemModal()" class="submit-button" style="flex: 1; background: #cbd5e1; color: var(--text); padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Batal</button>
-        </div>
-      </form>
-    </div>
-  `;
-  document.body.appendChild(modal);
 }
 
 function openAddServiceToTransactionModal() {
