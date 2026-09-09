@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzgPz_F6fP_B9Ou5e9yMNtIIeQkAeXjPAX8wwkt4aIAR6ctwzcdyspMpkDHeTNI6BPOIg/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzzMrj1YcdLvgaBr_fNBAEjHYynN16Zf8iAf34wXldx6m-y08Hb9phvWy6hfiZilctedA/exec";
 
 const safeStorage = {
   _memory: {},
@@ -31,6 +31,19 @@ let servicePrices = getSafeData("arsyServices", {
   "Setrika express": { price: 6000, unit: "kg", processes: ["Setrika"], duration: "4 Jam", minQty: 1, pinned: false }
 });
 
+Object.keys(servicePrices).forEach(key => {
+  if (typeof servicePrices[key] === 'number') {
+    servicePrices[key] = { price: servicePrices[key], unit: key === "Bed Cover" ? "pcs" : "kg", processes: ["Cuci"], duration: "1 Hari", minQty: 1, pinned: false };
+  } else if (!servicePrices[key].processes) {
+    servicePrices[key].processes = ["Cuci"];
+    servicePrices[key].duration = "1 Hari";
+    servicePrices[key].minQty = 1;
+  }
+  if (servicePrices[key].pinned === undefined) {
+    servicePrices[key].pinned = (key === "Cuci Kering" || key === "Cuci Setrika");
+  }
+});
+
 let transactions = getSafeData("arsyTransactions", []);
 transactions = Array.from(new Map(transactions.map(t => [t.id, t])).values());
 let savedCustomers = [];
@@ -48,15 +61,48 @@ async function loadFromCloud() {
     let response = await fetch(WEB_APP_URL);
     let cloudData = await response.json();
     if (cloudData.transactions && Array.isArray(cloudData.transactions)) {
-      transactions = cloudData.transactions;
+      const mergedMap = new Map();
+      cloudData.transactions.forEach(t => mergedMap.set(t.id, t));
+      transactions.forEach(t => {
+        if (!mergedMap.has(t.id) || new Date(t.date) >= new Date(mergedMap.get(t.id).date)) {
+          mergedMap.set(t.id, t);
+        }
+      });
+      transactions = Array.from(mergedMap.values()).sort((a, b) => new Date(b.date) - new Date(a.date));
       safeStorage.setItem("arsyTransactions", JSON.stringify(transactions));
       savedCustomers = cloudData.customers || [];
-      if (cloudData.services) { servicePrices = cloudData.services; safeStorage.setItem("arsyServices", JSON.stringify(servicePrices)); }
-      if (cloudData.outlet) { arsyOutlet = cloudData.outlet; safeStorage.setItem("arsyOutlet", JSON.stringify(arsyOutlet)); }
-      if (cloudData.notaSettings) { notaSettings = cloudData.notaSettings; safeStorage.setItem("arsyNotaSettings", JSON.stringify(notaSettings)); }
+      if (cloudData.services && Object.keys(cloudData.services).length > 0) {
+        servicePrices = cloudData.services;
+        safeStorage.setItem("arsyServices", JSON.stringify(servicePrices));
+      }
+      if (cloudData.outlet && Object.keys(cloudData.outlet).length > 0) {
+        arsyOutlet = cloudData.outlet;
+        safeStorage.setItem("arsyOutlet", JSON.stringify(arsyOutlet));
+      }
+      if (cloudData.notaSettings && Object.keys(cloudData.notaSettings).length > 0) {
+        notaSettings = cloudData.notaSettings;
+        safeStorage.setItem("arsyNotaSettings", JSON.stringify(notaSettings));
+      }
       renderAll();
     }
-  } catch (err) {}
+  } catch (err) {
+    renderAll();
+  }
+}
+
+function removeProElements() {
+  document.querySelectorAll("div, span, a, li, p").forEach(el => {
+    if (el.children.length === 0) {
+      const text = el.textContent.trim();
+      if (text.includes("Perpanjang Randori Pro")) {
+        let row = el.closest("div[style*='cursor']") || el.closest("div") || el.parentElement;
+        if (row) row.remove();
+      }
+      if (text.includes("Tgl Berakhir:") || (text.startsWith("Pro") && text.includes("Berakhir"))) {
+        el.remove();
+      }
+    }
+  });
 }
 
 function formatRupiah(number) { return "Rp " + Number(number).toLocaleString("id-ID"); }
@@ -64,7 +110,8 @@ function formatDate(date) { return new Date(date).toLocaleDateString("id-ID", { 
 
 function calculateEstimationDate(dateStr, durationStr) {
   let date = new Date(dateStr);
-  let lower = String(durationStr || "1 Hari").toLowerCase();
+  if (!durationStr) { date.setDate(date.getDate() + 1); return date; }
+  let lower = String(durationStr).toLowerCase();
   let num = parseInt(lower) || 1;
   if (lower.includes("hari") || lower.includes("day")) date.setDate(date.getDate() + num);
   else if (lower.includes("jam")) date.setTime(date.getTime() + num * 3600 * 1000);
@@ -98,6 +145,19 @@ function getSortedServiceNames() {
   });
 }
 
+async function saveData() {
+  transactions = Array.from(new Map(transactions.map(t => [t.id, t])).values());
+  safeStorage.setItem("arsyTransactions", JSON.stringify(transactions));
+  const payload = { action: "saveAll", transactions, customers: savedCustomers, services: servicePrices, outlet: arsyOutlet, notaSettings };
+  try {
+    await fetch(WEB_APP_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "data=" + encodeURIComponent(JSON.stringify(payload))
+    });
+  } catch (err) {}
+}
 function injectTransactionModalHTML() {
   let modal = document.getElementById("transactionModal");
   if (!modal) {
@@ -139,7 +199,7 @@ function injectTransactionModalHTML() {
           <span style="font-weight: bold; font-size: 14px;">Total</span>
           <b id="transactionTotalDisplay" style="color: var(--primary); font-size: 16px;">Rp 0</b>
         </div>
-        <button type="submit" class="submit-button" style="width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; color: white; background: var(--primary);">Simpan Transaksi</button>
+        <button type="submit" class="submit-button" style="background: var(--primary); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Simpan Transaksi</button>
       </form>
     </div>
   `;
@@ -161,14 +221,38 @@ function injectTransactionModalHTML() {
   }
 }
 
+function injectEditTransactionItemModalHTML() {
+  if (document.getElementById("editTransactionItemModal")) return;
+  const modal = document.createElement("div");
+  modal.id = "editTransactionItemModal";
+  modal.className = "modal";
+  modal.innerHTML = `
+    <div class="modal-content" style="background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 360px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="font-size:18px; font-weight:bold;">Ubah Layanan</h3>
+        <button type="button" onclick="closeEditTransactionItemModal()" style="background:none; border:none; font-size:22px; cursor:pointer;">&times;</button>
+      </div>
+      <form id="editTransactionItemForm" onsubmit="saveEditTransactionItem(event)">
+        <div style="margin-bottom: 12px;"><label style="font-size: 13px; color: var(--muted);" id="editItemNameLabel">Layanan</label></div>
+        <div style="margin-bottom: 16px;">
+          <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px;">Berat / Jumlah (<span id="editItemUnitLabel">kg</span>)</label>
+          <input type="number" step="any" id="editItemWeightInput" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; text-align: center;" required>
+        </div>
+        <button type="submit" class="submit-button" style="background: var(--primary); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Simpan</button>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
 function openAddServiceToTransactionModal() {
   const container = document.getElementById("serviceSelectionList");
   if (!container) return;
   container.innerHTML = getSortedServiceNames().map(name => {
     const srv = servicePrices[name];
     return `
-      <div onclick="addServiceToCurrentTransaction('${name}')" style="padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
-        <div><b>${name}</b><div style="font-size: 12px; color: var(--muted);">${formatRupiah(srv.price)} / ${srv.unit}</div></div>
+      <div onclick="addServiceToCurrentTransaction('${escapeHTML(name)}')" style="padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+        <div><b>${escapeHTML(name)}</b><div style="font-size: 12px; color: var(--muted);">${formatRupiah(srv.price)} / ${srv.unit}</div></div>
         <span style="color: var(--primary); font-size: 13px; font-weight: bold;">+ Pilih</span>
       </div>
     `;
@@ -217,7 +301,7 @@ function renderActiveTransactionItems() {
     return `
       <div style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 8px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-          <b style="font-size: 13px; color: var(--primary);">${item.serviceType}</b>
+          <b style="font-size: 13px; color: var(--primary);">${escapeHTML(item.serviceType)}</b>
           <button type="button" onclick="removeActiveTransactionItem(${idx})" style="background: none; border: none; color: #dc2626; font-size: 13px; cursor: pointer;">Hapus</button>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -237,18 +321,145 @@ function openTransactionModal() {
 }
 
 function closeTransactionModal() { document.getElementById("transactionModal").classList.remove("show"); }
-function saveData() {
-  transactions = Array.from(new Map(transactions.map(t => [t.id, t])).values());
-  safeStorage.setItem("arsyTransactions", JSON.stringify(transactions));
-  const payload = { action: "saveAll", transactions, customers: savedCustomers, services: servicePrices, outlet: arsyOutlet, notaSettings };
-  try {
-    fetch(WEB_APP_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: "data=" + encodeURIComponent(JSON.stringify(payload))
-    });
-  } catch (err) {}
+
+function injectCustomerModules() {
+  if (!document.getElementById("customerPage")) {
+    const div = document.createElement("div");
+    div.id = "customerPage";
+    div.className = "page";
+    div.innerHTML = `<div style="padding: 15px; background: white; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border);"><button onclick="showPage('dashboardPage')" style="background:none; border:none; font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button><h2 style="font-size: 16px; font-weight: bold;">Daftar Pelanggan</h2></div><div style="padding: 15px;" id="customersListContainer"></div>`;
+    document.body.appendChild(div);
+  }
+}
+
+function injectOutletModule() {
+  if (!document.getElementById("outletPage")) {
+    const div = document.createElement("div");
+    div.id = "outletPage";
+    div.className = "page";
+    div.innerHTML = `<div style="padding: 15px; background: white; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border);"><button onclick="showPage('akunPage')" style="background:none; border:none; font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button><h2 style="font-size: 16px; font-weight: bold;">Ubah Data Outlet</h2></div><div style="padding: 15px;"><form id="outletForm" onsubmit="saveOutletForm(event)"><div style="margin-bottom: 12px;"><label style="font-size: 13px; font-weight: bold;">Nama Outlet</label><input type="text" id="outletName" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;" required></div><button type="submit" class="submit-button" style="background: var(--primary); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Simpan</button></form></div>`;
+    document.body.appendChild(div);
+  }
+}
+
+function saveOutletForm(e) {
+  e.preventDefault();
+  arsyOutlet.name = document.getElementById("outletName").value.trim();
+  safeStorage.setItem("arsyOutlet", JSON.stringify(arsyOutlet));
+  saveData();
+  showToast("Outlet disimpan");
+  showPage('akunPage');
+}
+
+function openOutletPage() {
+  if(document.getElementById("outletName")) document.getElementById("outletName").value = arsyOutlet.name;
+  showPage('outletPage');
+}
+
+function setupAkunOutletLink() {
+  document.querySelectorAll("div, span, a, li").forEach(el => {
+    if (el.textContent.trim() === "Ubah Data Outlet" && !el.dataset.bound) {
+      el.dataset.bound = "true";
+      el.onclick = () => openOutletPage();
+    }
+  });
+                                                     }
+function saveServicesData() {
+  safeStorage.setItem("arsyServices", JSON.stringify(servicePrices));
+  saveData(); // <--- FIX UTAMA: Otomatis sinkron dan simpan permanen ke Google Sheet/Cloud
+}
+
+function renderServices() {
+  const element = document.getElementById("servicesList");
+  if(!element) return;
+  const sortedNames = getSortedServiceNames();
+  element.innerHTML = sortedNames.map(name => {
+    const data = servicePrices[name];
+    return `
+      <div style="background: white; border-radius: 13px; padding: 15px; margin-top: 10px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="openEditServiceModal('${escapeHTML(name)}')">
+        <div><b>${escapeHTML(name)}</b><br><small style="color:var(--muted);">${formatRupiah(data.price)} / ${data.unit}</small></div>
+        <span style="font-size: 11px; color: var(--primary); font-weight: 500;">Ubah</span>
+      </div>
+    `;
+  }).join("");
+}
+
+function openServiceModal() {
+  const modal = document.getElementById("serviceModal");
+  if (!modal) return;
+  document.getElementById("serviceModalTitle").textContent = "Tambah Layanan";
+  document.getElementById("editServiceOldName").value = "";
+  document.getElementById("srvName").value = "";
+  document.getElementById("srvPrice").value = "";
+  document.getElementById("srvDuration").value = "1 Hari";
+  document.getElementById("srvMinQty").value = "1";
+  document.getElementById("srvUnit").value = "kg";
+  document.getElementById("srvPinned").checked = false;
+  document.querySelectorAll("input[name='srvProcess']").forEach(cb => cb.checked = false);
+  document.getElementById("btnDeleteService").style.display = "none";
+  modal.classList.add("show");
+}
+
+function openEditServiceModal(name) {
+  const srv = servicePrices[name];
+  if (!srv) return;
+  const modal = document.getElementById("serviceModal");
+  if (!modal) return;
+  document.getElementById("serviceModalTitle").textContent = "Ubah Layanan";
+  document.getElementById("editServiceOldName").value = name;
+  document.getElementById("srvName").value = name;
+  document.getElementById("srvPrice").value = srv.price;
+  document.getElementById("srvDuration").value = srv.duration || "1 Hari";
+  document.getElementById("srvMinQty").value = srv.minQty || 1;
+  document.getElementById("srvUnit").value = srv.unit || "kg";
+  document.getElementById("srvPinned").checked = !!srv.pinned;
+  document.querySelectorAll("input[name='srvProcess']").forEach(cb => {
+    cb.checked = (srv.processes || []).includes(cb.value);
+  });
+  document.getElementById("btnDeleteService").style.display = "block";
+  modal.classList.add("show");
+}
+
+function closeServiceModal() {
+  const modal = document.getElementById("serviceModal");
+  if (modal) modal.classList.remove("show");
+}
+
+function saveRichService(e) {
+  e.preventDefault();
+  const oldName = document.getElementById("editServiceOldName").value.trim();
+  const newName = document.getElementById("srvName").value.trim();
+  const price = Number(document.getElementById("srvPrice").value);
+  const unit = document.getElementById("srvUnit").value;
+  const duration = document.getElementById("srvDuration").value.trim() || "1 Hari";
+  const minQty = Number(document.getElementById("srvMinQty").value) || 1;
+  const pinned = document.getElementById("srvPinned").checked;
+  
+  const processes = [];
+  document.querySelectorAll("input[name='srvProcess']:checked").forEach(cb => {
+    processes.push(cb.value);
+  });
+
+  if (!newName || isNaN(price)) return;
+  if (oldName && oldName !== newName) delete servicePrices[oldName];
+
+  servicePrices[newName] = { price, unit, processes, duration, minQty, pinned };
+  saveServicesData(); // Memanggil fungsi save yang sudah mencakup sinkronisasi Cloud
+  renderServices();
+  closeServiceModal();
+  showToast("Layanan berhasil disimpan");
+}
+
+function deleteCurrentService() {
+  const name = document.getElementById("editServiceOldName").value.trim();
+  if (!name) return;
+  if (confirm(`Hapus layanan "${name}"?`)) {
+    delete servicePrices[name];
+    saveServicesData();
+    renderServices();
+    closeServiceModal();
+    showToast("Layanan dihapus");
+  }
 }
 
 function setupForm() {
@@ -278,7 +489,6 @@ function setupForm() {
       activeNewTransactionItems = [];
       closeTransactionModal();
       renderAll();
-      openTransactionDetail(transaction.id);
     });
   }
 }
@@ -288,6 +498,7 @@ function renderAll() {
   renderRecentTransactions();
   renderAllTransactions();
   renderServices();
+  removeProElements();
 }
 
 function updateDashboard() {
@@ -314,7 +525,7 @@ function transactionHTML(item) {
     <div onclick="openTransactionDetail(${item.id})" style="cursor: pointer; background: white; margin-top: 10px; border-radius: 13px; padding: 15px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
       <div>
         <h3 style="font-size: 15px; color: var(--primary);">TRX/${item.id}</h3>
-        <p style="font-weight: bold; margin-top: 2px;">${item.customerName}</p>
+        <p style="font-weight: bold; margin-top: 2px;">${escapeHTML(item.customerName)}</p>
         <span class="status status-${statusClass}" style="margin-top: 6px; display: inline-block;">${item.status}</span>
       </div>
       <div style="text-align: right;">
@@ -340,16 +551,6 @@ function renderAllTransactions() {
   element.innerHTML = filtered.map(transactionHTML).join("") || `<div class="empty-state">Tidak ada transaksi</div>`;
 }
 
-function renderServices() {
-  const element = document.getElementById("servicesList");
-  if(!element) return;
-  element.innerHTML = getSortedServiceNames().map(name => `
-    <div style="background: white; border-radius: 13px; padding: 15px; margin-top: 10px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-      <div><b>${name}</b><br><small style="color:var(--muted);">${formatRupiah(servicePrices[name].price)} / ${servicePrices[name].unit}</small></div>
-    </div>
-  `).join("");
-}
-
 function showPage(pageId) {
   document.querySelectorAll(".modal").forEach(m => m.classList.remove("show"));
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
@@ -368,18 +569,34 @@ function openTransactionDetail(id) {
   container.innerHTML = `
     <div class="report-card" style="margin-bottom: 16px;">
       <p><b>No. Transaksi:</b> TRX/${item.id}</p>
-      <p><b>Pelanggan:</b> ${item.customerName}</p>
+      <p><b>Pelanggan:</b> ${escapeHTML(item.customerName)}</p>
       <p><b>Total:</b> ${formatRupiah(item.total)}</p>
       <p><b>Status:</b> ${item.status}</p>
     </div>
-    <button type="submit" class="submit-button" onclick="showPage('transactionsPage')">Kembali</button>
+    <button type="button" class="submit-button" style="background: var(--primary); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;" onclick="showPage('transactionsPage')">Kembali</button>
   `;
   showPage("transactionDetailPage");
 }
 
+function showToast(msg) {
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2500);
+}
+
+function escapeHTML(text) {
+  return String(text).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
 document.addEventListener("DOMContentLoaded", function () {
+  injectCustomerModules();
+  injectOutletModule();
   injectTransactionModalHTML();
   renderAll();
   loadFromCloud();
   setupForm();
+  setupAkunOutletLink();
 });
+            
