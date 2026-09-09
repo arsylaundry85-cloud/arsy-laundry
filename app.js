@@ -308,6 +308,10 @@ function injectTransactionModalHTML() {
           <input type="text" id="customerName" placeholder="Contoh: Budi" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;" required autocomplete="off">
         </div>
         <div style="margin-bottom: 12px;">
+          <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px;">Nomor WhatsApp Pelanggan (Opsional)</label>
+          <input type="text" id="customerPhoneInput" placeholder="Contoh: 628123456789" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;" autocomplete="off">
+        </div>
+        <div style="margin-bottom: 12px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <label style="font-size: 13px; font-weight: bold;">Layanan Laundry</label>
             <button type="button" onclick="openAddServiceToTransactionModal()" style="background: #e1edff; color: var(--primary); border: none; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;">+ Tambah Layanan</button>
@@ -366,14 +370,14 @@ function injectTransactionModalHTML() {
         </div>
         <div style="margin-bottom: 12px;">
           <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 4px;">Status Pembayaran</label>
-          <select id="payStatusSelect" onchange="togglePayAmountField()" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;">
+          <select id="payStatusSelect" onchange="togglePayAmountField()" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: white;">
             <option value="Lunas">Lunas</option>
             <option value="DP">DP</option>
           </select>
         </div>
         <div style="margin-bottom: 12px;">
           <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 4px;">Metode Pembayaran</label>
-          <select id="payMethodSelect" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;">
+          <select id="payMethodSelect" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: white;">
             <option value="Tunai">Tunai</option>
             <option value="GoPay">GoPay</option>
             <option value="Dana">Dana</option>
@@ -654,6 +658,7 @@ function renderActiveTransactionItems() {
 function openTransactionModal() {
   activeNewTransactionItems = [];
   renderActiveTransactionItems();
+  if(document.getElementById("customerPhoneInput")) document.getElementById("customerPhoneInput").value = "";
   document.getElementById("transactionModal").classList.add("show");
 }
 
@@ -665,12 +670,14 @@ function setupForm() {
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       const customerName = document.getElementById("customerName").value.trim();
+      const customerPhone = document.getElementById("customerPhoneInput") ? document.getElementById("customerPhoneInput").value.trim() : "";
       if (!customerName || activeNewTransactionItems.length === 0) return;
 
       const grandTotal = activeNewTransactionItems.reduce((sum, it) => sum + it.total, 0);
       const transaction = {
         id: Date.now(),
         customerName,
+        customerPhone,
         items: JSON.parse(JSON.stringify(activeNewTransactionItems)),
         status: document.getElementById("status").value,
         total: grandTotal,
@@ -723,6 +730,7 @@ function openTransactionDetail(id) {
     <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 12px;">
       <p style="font-size: 13px; color: var(--muted); font-weight: bold; margin-bottom: 6px;">INFO PELANGGAN</p>
       <b style="font-size: 15px;">${escapeHTML(item.customerName)}</b>
+      <p style="font-size: 12px; color: var(--muted); margin-top: 2px;">No. WhatsApp: ${item.customerPhone ? escapeHTML(item.customerPhone) : '-'}</p>
     </div>
 
     <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 12px;">
@@ -954,12 +962,17 @@ function sendWhatsAppNota(txId) {
   let item = transactions.find(t => t.id === txId);
   if (!item) return;
 
-  let phone = item.customerPhone || prompt(`Masukkan nomor WhatsApp ${item.customerName} (Contoh: 628123456789):`, "");
-  if (!phone) return;
-  
-  phone = phone.trim().replace(/^0/, "62").replace(/[^0-9]/g, "");
-  item.customerPhone = phone;
-  saveData();
+  // Jika nomor HP kosong, tanyakan sekali lewat prompt lalu simpan otomatis ke transaksi
+  let phone = item.customerPhone;
+  if (!phone) {
+    phone = prompt(`Masukkan nomor WhatsApp ${item.customerName} (Contoh: 628123456789):`, "");
+    if (!phone) return;
+    phone = phone.trim().replace(/^0/, "62").replace(/[^0-9]/g, "");
+    item.customerPhone = phone;
+    saveData();
+  } else {
+    phone = phone.trim().replace(/^0/, "62").replace(/[^0-9]/g, "");
+  }
 
   let itemsList = getTransactionItems(item);
   let layananText = itemsList.map(it => {
