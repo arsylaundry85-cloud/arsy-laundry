@@ -2215,4 +2215,49 @@ function filterServiceSelectionList() {
     `;
   }).join("");
 }
+function openAddServiceToTransactionModal() {
+  const searchInput = document.getElementById("serviceSearchInput");
+  if (searchInput) searchInput.value = "";
+  
+  if (typeof filterServiceSelectionList === "function") {
+    filterServiceSelectionList();
+  }
+  
+  const modal = document.getElementById("addServiceSelectModal");
+  if (modal) modal.classList.add("show");
+}
+
+function filterServiceSelectionList() {
+  try {
+    const searchInput = document.getElementById("serviceSearchInput");
+    const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+    const container = document.getElementById("serviceSelectionList");
+    if (!container) return;
+
+    const names = typeof getSortedServiceNames === "function" ? getSortedServiceNames() : Object.keys(servicePrices || {});
+    const sortedNames = names.filter(name => name.toLowerCase().includes(query));
+    
+    if (sortedNames.length === 0) {
+      container.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--muted); font-size: 13px;">Layanan tidak ditemukan</div>`;
+      return;
+    }
+
+    container.innerHTML = sortedNames.map(name => {
+      const srv = servicePrices[name] || {};
+      const price = srv.price || 0;
+      const unit = srv.unit || '';
+      return `
+        <div onclick="addServiceToCurrentTransaction('${escapeHTML(name)}')" style="padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <b style="font-size: 14px; color: var(--text);">${escapeHTML(name)}</b>
+            <div style="font-size: 12px; color: var(--muted);">${formatRupiah(price)} / ${unit}</div>
+          </div>
+          <span style="color: var(--primary); font-size: 13px; font-weight: bold;">+ Pilih</span>
+        </div>
+      `;
+    }).join("");
+  } catch (err) {
+    console.error("Filter error:", err);
+  }
+}
 
