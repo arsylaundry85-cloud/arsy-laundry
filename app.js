@@ -269,7 +269,6 @@ function injectServiceModalHTML() {
     </div>
   `;
 }
-
 function injectTransactionSearch() {
   const transactionPage = document.getElementById("transactionsPage");
   if (!transactionPage) return;
@@ -350,85 +349,81 @@ function injectTransactionModalHTML() {
     `;
     document.body.appendChild(subModal);
   }
-}
 
-function openAddServiceToTransactionModal() {
-  const container = document.getElementById("serviceSelectionList");
-  if (!container) return;
-  container.innerHTML = getSortedServiceNames().map(name => {
-    const srv = servicePrices[name];
-    return `
-      <div onclick="addServiceToCurrentTransaction('${escapeHTML(name)}')" style="padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
-        <div><b>${escapeHTML(name)}</b><div style="font-size: 12px; color: var(--muted);">${formatRupiah(srv.price)} / ${srv.unit}</div></div>
-        <span style="color: var(--primary); font-size: 13px; font-weight: bold;">+ Pilih</span>
+  if (!document.getElementById("paymentModal")) {
+    let payModal = document.createElement("div");
+    payModal.id = "paymentModal";
+    payModal.className = "modal";
+    payModal.innerHTML = `
+      <div class="modal-content" style="background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 380px; max-height: 85vh; overflow-y: auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+          <h3 style="font-size:16px; font-weight:bold;">Pembayaran</h3>
+          <button type="button" onclick="closePaymentModal()" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
+        </div>
+        <div style="margin-bottom: 12px;">
+          <p style="font-size: 12px; color: var(--muted);">Total Tagihan / Sisa</p>
+          <b id="payModalTotal" style="font-size: 16px; color: var(--primary);">Rp 0</b>
+        </div>
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 4px;">Status Pembayaran</label>
+          <select id="payStatusSelect" onchange="togglePayAmountField()" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;">
+            <option value="Lunas">Lunas</option>
+            <option value="DP">DP</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 4px;">Metode Pembayaran</label>
+          <select id="payMethodSelect" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;">
+            <option value="Tunai">Tunai</option>
+            <option value="GoPay">GoPay</option>
+            <option value="Dana">Dana</option>
+            <option value="ShopeePay">ShopeePay</option>
+            <option value="QRIS">QRIS</option>
+            <option value="Transfer">Transfer</option>
+            <option value="Deposit">Deposit</option>
+          </select>
+        </div>
+        <div id="payAmountWrapper" style="margin-bottom: 16px; display: none;">
+          <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 4px;">Jumlah Pembayaran (DP)</label>
+          <input type="number" id="payAmountInput" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;">
+        </div>
+        <button type="button" onclick="processPaymentSubmit()" style="background: #16a34a; color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Bayar</button>
       </div>
     `;
-  }).join("");
-  document.getElementById("addServiceSelectModal").classList.add("show");
-}
-
-function closeAddServiceSelectModal() { document.getElementById("addServiceSelectModal").classList.remove("show"); }
-
-function addServiceToCurrentTransaction(serviceName) {
-  const srv = servicePrices[serviceName];
-  if (!srv) return;
-  activeNewTransactionItems.push({ serviceType: serviceName, weight: srv.minQty || 1, total: (srv.minQty || 1) * srv.price });
-  closeAddServiceSelectModal();
-  renderActiveTransactionItems();
-}
-
-function removeActiveTransactionItem(index) {
-  activeNewTransactionItems.splice(index, 1);
-  renderActiveTransactionItems();
-}
-
-function updateActiveItemWeight(index, val) {
-  let w = parseFloat(val.replace(',', '.')) || 0;
-  activeNewTransactionItems[index].weight = w;
-  const srv = servicePrices[activeNewTransactionItems[index].serviceType];
-  activeNewTransactionItems[index].total = Math.round(w * (srv ? srv.price : 0));
-  renderActiveTransactionItems();
-}
-
-function renderActiveTransactionItems() {
-  const container = document.getElementById("transactionItemsContainer");
-  const totalDisplay = document.getElementById("transactionTotalDisplay");
-  if (!container) return;
-
-  if (activeNewTransactionItems.length === 0) {
-    container.innerHTML = `<div style="color: var(--muted); font-size: 13px; text-align: center; padding: 15px;">Belum ada layanan dipilih</div>`;
-    if (totalDisplay) totalDisplay.textContent = formatRupiah(0);
-    return;
+    document.body.appendChild(payModal);
   }
 
-  let grandTotal = 0;
-  container.innerHTML = activeNewTransactionItems.map((item, idx) => {
-    grandTotal += item.total;
-    const srv = servicePrices[item.serviceType];
-    return `
-      <div style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 8px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-          <b style="font-size: 13px; color: var(--primary);">${escapeHTML(item.serviceType)}</b>
-          <button type="button" onclick="removeActiveTransactionItem(${idx})" style="background: none; border: none; color: #dc2626; font-size: 13px; cursor: pointer;">Hapus</button>
+  if (!document.getElementById("itemEditModal")) {
+    let editModal = document.createElement("div");
+    editModal.id = "itemEditModal";
+    editModal.className = "modal";
+    editModal.innerHTML = `
+      <div class="modal-content" style="background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 350px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+          <h3 id="itemEditTitle" style="font-size:16px; font-weight:bold;">Ubah Layanan</h3>
+          <button type="button" onclick="closeItemEditModal()" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <input type="number" step="any" value="${item.weight}" oninput="updateActiveItemWeight(${idx}, this.value)" style="width: 80px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px;">
-          <b style="font-size: 13px;">${formatRupiah(item.total)}</b>
+        <div style="margin-bottom: 15px;">
+          <label id="itemEditLabel" style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px;"></label>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button type="button" onclick="adjustItemEditWeight(-1)" style="padding: 8px 14px; background: #e2e8f0; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">-</button>
+            <input type="number" id="itemEditWeightInput" step="any" oninput="calculateItemEditTotal()" style="flex: 1; padding: 8px; text-align: center; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+            <button type="button" onclick="adjustItemEditWeight(1)" style="padding: 8px 14px; background: #e2e8f0; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">+</button>
+          </div>
+        </div>
+        <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 13px; font-weight: bold;">Estimasi Total:</span>
+          <b id="itemEditTotalDisplay" style="color: var(--primary); font-size: 15px;">Rp 0</b>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" onclick="closeItemEditModal()" style="flex: 1; padding: 10px; border: 1px solid var(--border); background: white; border-radius: 8px; font-weight: bold; cursor: pointer;">Batal</button>
+          <button type="button" onclick="saveItemEdit()" style="flex: 1; padding: 10px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Simpan</button>
         </div>
       </div>
     `;
-  }).join("");
-  if (totalDisplay) totalDisplay.textContent = formatRupiah(grandTotal);
+    document.body.appendChild(editModal);
+  }
 }
-
-function openTransactionModal() {
-  activeNewTransactionItems = [];
-  renderActiveTransactionItems();
-  document.getElementById("transactionModal").classList.add("show");
-}
-
-function closeTransactionModal() { document.getElementById("transactionModal").classList.remove("show"); }
-
 function injectCustomerModules() {
   if (!document.getElementById("customerPage")) {
     const div = document.createElement("div");
@@ -478,7 +473,8 @@ function setupAkunOutletLink() {
       el.onclick = () => openOutletPage();
     }
   });
-    }
+}
+
 function saveServicesData() {
   safeStorage.setItem("arsyServices", JSON.stringify(servicePrices));
   saveData();
@@ -585,7 +581,83 @@ function deleteCurrentService() {
     closeServiceModal();
     showToast("Layanan dihapus");
   }
+    }
+function openAddServiceToTransactionModal() {
+  const container = document.getElementById("serviceSelectionList");
+  if (!container) return;
+  container.innerHTML = getSortedServiceNames().map(name => {
+    const srv = servicePrices[name];
+    return `
+      <div onclick="addServiceToCurrentTransaction('${escapeHTML(name)}')" style="padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+        <div><b>${escapeHTML(name)}</b><div style="font-size: 12px; color: var(--muted);">${formatRupiah(srv.price)} / ${srv.unit}</div></div>
+        <span style="color: var(--primary); font-size: 13px; font-weight: bold;">+ Pilih</span>
+      </div>
+    `;
+  }).join("");
+  document.getElementById("addServiceSelectModal").classList.add("show");
 }
+
+function closeAddServiceSelectModal() { document.getElementById("addServiceSelectModal").classList.remove("show"); }
+
+function addServiceToCurrentTransaction(serviceName) {
+  const srv = servicePrices[serviceName];
+  if (!srv) return;
+  activeNewTransactionItems.push({ serviceType: serviceName, weight: srv.minQty || 1, total: (srv.minQty || 1) * srv.price });
+  closeAddServiceSelectModal();
+  renderActiveTransactionItems();
+}
+
+function removeActiveTransactionItem(index) {
+  activeNewTransactionItems.splice(index, 1);
+  renderActiveTransactionItems();
+}
+
+function updateActiveItemWeight(index, val) {
+  let w = parseFloat(val.replace(',', '.')) || 0;
+  activeNewTransactionItems[index].weight = w;
+  const srv = servicePrices[activeNewTransactionItems[index].serviceType];
+  activeNewTransactionItems[index].total = Math.round(w * (srv ? srv.price : 0));
+  renderActiveTransactionItems();
+}
+
+function renderActiveTransactionItems() {
+  const container = document.getElementById("transactionItemsContainer");
+  const totalDisplay = document.getElementById("transactionTotalDisplay");
+  if (!container) return;
+
+  if (activeNewTransactionItems.length === 0) {
+    container.innerHTML = `<div style="color: var(--muted); font-size: 13px; text-align: center; padding: 15px;">Belum ada layanan dipilih</div>`;
+    if (totalDisplay) totalDisplay.textContent = formatRupiah(0);
+    return;
+  }
+
+  let grandTotal = 0;
+  container.innerHTML = activeNewTransactionItems.map((item, idx) => {
+    grandTotal += item.total;
+    const srv = servicePrices[item.serviceType];
+    return `
+      <div style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <b style="font-size: 13px; color: var(--primary);">${escapeHTML(item.serviceType)}</b>
+          <button type="button" onclick="removeActiveTransactionItem(${idx})" style="background: none; border: none; color: #dc2626; font-size: 13px; cursor: pointer;">Hapus</button>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <input type="number" step="any" value="${item.weight}" oninput="updateActiveItemWeight(${idx}, this.value)" style="width: 80px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px;">
+          <b style="font-size: 13px;">${formatRupiah(item.total)}</b>
+        </div>
+      </div>
+    `;
+  }).join("");
+  if (totalDisplay) totalDisplay.textContent = formatRupiah(grandTotal);
+}
+
+function openTransactionModal() {
+  activeNewTransactionItems = [];
+  renderActiveTransactionItems();
+  document.getElementById("transactionModal").classList.add("show");
+}
+
+function closeTransactionModal() { document.getElementById("transactionModal").classList.remove("show"); }
 
 function setupForm() {
   const form = document.getElementById("transactionForm");
@@ -618,72 +690,274 @@ function setupForm() {
   }
 }
 
-function renderAll() {
-  updateDashboard();
-  renderRecentTransactions();
-  renderAllTransactions();
-  renderServices();
-  setupDashboardInteractions();
-  setupReportInteractions();
-  setupServiceInteractions();
-  setupTransactionTabs();
-  removeProElements();
-}
+function openTransactionDetail(id) {
+  activeTransactionId = id;
+  const item = transactions.find(t => t.id === id);
+  if (!item) return;
+  const container = document.getElementById("detailContent");
+  if (!container) return;
 
-function updateDashboard() {
-  transactions = Array.from(new Map(transactions.map(t => [t.id, t])).values());
-  const todayData = transactions.filter(item => isToday(item.date) && item.status !== "Batal");
-  const todayValidIncome = transactions
-    .filter(item => item.status !== "Batal" && (item.paymentStatus === "Lunas" || item.paidAmount > 0) && isToday(item.paymentDate || item.date))
-    .reduce((sum, item) => sum + (item.paymentStatus === "Lunas" ? item.total : item.paidAmount), 0);
-  const pending = transactions.filter(item => item.status !== "Batal" && !item.status.toLowerCase().includes("selesai")).length;
-  
-  const customerMap = new Map();
-  transactions.forEach(t => customerMap.set(t.customerName, true));
+  const itemsList = getTransactionItems(item);
+  const estStr = formatDate(getEstDate(item));
 
-  if(document.getElementById("todayIncome")) document.getElementById("todayIncome").textContent = formatRupiah(todayValidIncome);
-  if(document.getElementById("todayTransactions")) document.getElementById("todayTransactions").textContent = todayData.length;
-  if(document.getElementById("pendingTransactions")) document.getElementById("pendingTransactions").textContent = pending;
-  if(document.getElementById("totalCustomers")) document.getElementById("totalCustomers").textContent = customerMap.size;
-}
+  let nextStatusBtn = "";
+  if (item.status === "Antrian") {
+    nextStatusBtn = `<button type="button" onclick="updateTransactionStatus(${item.id}, 'Proses')" style="background: var(--primary); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; margin-bottom: 12px;">Proses Transaksi</button>`;
+  } else if (item.status === "Proses") {
+    nextStatusBtn = `<button type="button" onclick="updateTransactionStatus(${item.id}, 'Siap Diambil')" style="background: var(--primary); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; margin-bottom: 12px;">Transaksi Siap Diambil</button>`;
+  } else if (item.status === "Siap Diambil") {
+    nextStatusBtn = `<button type="button" onclick="updateTransactionStatus(${item.id}, 'Selesai')" style="background: #16a34a; color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; margin-bottom: 12px;">Selesaikan Transaksi</button>`;
+  }
 
-function transactionHTML(item) {
-  const statusClass = item.status ? item.status.toLowerCase().replace(/\s+/g, '-') : 'pending';
-  const isLunas = item.paymentStatus === 'Lunas';
-  return `
-    <div onclick="openTransactionDetail(${item.id})" style="cursor: pointer; background: white; margin-top: 10px; border-radius: 13px; padding: 15px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-      <div>
-        <h3 style="font-size: 15px; color: var(--primary);">TRX/${item.id}</h3>
-        <p style="font-weight: bold; margin-top: 2px;">${escapeHTML(item.customerName)}</p>
-        <span class="status status-${statusClass}" style="margin-top: 6px; display: inline-block;">${item.status}</span>
+  container.innerHTML = `
+    <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h3 style="font-size: 15px; color: var(--primary);">Detail Transaksi</h3>
+        <button onclick="openCancelTransactionPrompt(${item.id})" style="background: none; border: none; color: #dc2626; font-size: 12px; font-weight: bold; cursor: pointer;">Batalkan Transaksi</button>
       </div>
-      <div style="text-align: right;">
-        <b>${formatRupiah(item.total)}</b><br>
-        <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${isLunas ? '#dcfce7' : '#fee2e2'}; color: ${isLunas ? '#16a34a' : '#dc2626'}; font-weight: bold; display: inline-block; margin-top: 4px;">${item.paymentStatus || 'Belum Lunas'}</span>
+      <p style="font-size: 13px; margin-bottom: 4px;"><b>No. Transaksi:</b> TRX/${item.id}</p>
+      <p style="font-size: 13px; margin-bottom: 4px;"><b>Status Pengerjaan:</b> <span style="color: var(--primary); font-weight: bold;">${item.status}</span></p>
+      <p style="font-size: 13px; margin-bottom: 4px;"><b>Kasir:</b> Arif</p>
+      <p style="font-size: 13px;"><b>Estimasi Selesai:</b> ${estStr}</p>
+    </div>
+
+    <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 12px;">
+      <p style="font-size: 13px; color: var(--muted); font-weight: bold; margin-bottom: 6px;">INFO PELANGGAN</p>
+      <b style="font-size: 15px;">${escapeHTML(item.customerName)}</b>
+    </div>
+
+    <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <p style="font-size: 13px; color: var(--muted); font-weight: bold;">LAYANAN LAUNDRY</p>
+        <button type="button" onclick="openAddServiceExisting(${item.id})" style="background: #e1edff; color: var(--primary); border: none; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;">+ Tambah Layanan</button>
+      </div>
+      <div id="detailItemsList">
+        ${itemsList.map((it, idx) => {
+          const srv = servicePrices[it.serviceType];
+          return `
+            <div style="border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <b>${escapeHTML(it.serviceType)}</b>
+                <div style="font-size: 12px; color: var(--muted);">${it.weight} ${srv ? srv.unit : 'kg'} x ${formatRupiah(srv ? srv.price : 0)} = ${formatRupiah(it.total)}</div>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button onclick="openItemEditModal(${item.id}, ${idx})" style="background: #f1f5f9; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold;">Edit</button>
+                <button onclick="removeTransactionItem(${item.id}, ${idx})" style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold;">Hapus</button>
+              </div>
+            </div>
+          `;
+        }).join("")}
       </div>
     </div>
+
+    <div style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 16px;">
+      <p style="font-size: 13px; color: var(--muted); font-weight: bold; margin-bottom: 6px;">INFO PEMBAYARAN</p>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span style="font-size: 13px;">Total Transaksi</span><b style="font-size: 13px;">${formatRupiah(item.total)}</b></div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span style="font-size: 13px;">Status Pembayaran</span><span style="font-size: 12px; font-weight: bold; color: ${item.paymentStatus === 'Lunas' ? '#16a34a' : '#dc2626'};">${item.paymentStatus || 'Belum Lunas'}</span></div>
+      <div style="display: flex; justify-content: space-between;"><span style="font-size: 13px;">Metode Pembayaran</span><b style="font-size: 13px;">${item.paymentMethod || '-'}</b></div>
+    </div>
+
+    ${nextStatusBtn}
+
+    <button type="button" onclick="openPaymentModal(${item.id})" style="background: #16a34a; color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; margin-bottom: 8px;">Bayar</button>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+      <button type="button" onclick="printNota(${item.id})" style="background: white; border: 1px solid var(--border); padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px;">Cetak Nota</button>
+      <button type="button" onclick="printLabel(${item.id})" style="background: white; border: 1px solid var(--border); padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px;">Cetak Label</button>
+    </div>
+    <button type="button" onclick="sendWhatsAppNota(${item.id})" style="background: #25d366; color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; margin-bottom: 12px;">Kirim Nota WhatsApp</button>
+    <button type="button" class="submit-button" style="background: #64748b; color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;" onclick="showPage('transactionsPage')">Kembali</button>
   `;
+  showPage("transactionDetailPage");
 }
 
-function renderRecentTransactions() {
-  const element = document.getElementById("recentTransactions");
-  if(element) element.innerHTML = transactions.slice(0, 5).map(transactionHTML).join("") || `<div class="empty-state">Belum ada transaksi</div>`;
+function updateTransactionStatus(id, newStatus) {
+  let item = transactions.find(t => t.id === id);
+  if (!item) return;
+  item.status = newStatus;
+  saveData();
+  openTransactionDetail(id);
+  showToast(`Status diperbarui: ${newStatus}`);
 }
 
-function renderAllTransactions() {
-  const element = document.getElementById("allTransactions");
-  if (!element) return;
-  let filtered = transactions;
-  if (currentTransactionFilter !== 'Semua') {
-    filtered = filtered.filter(item => item.status && item.status.toLowerCase().includes(currentTransactionFilter.toLowerCase()));
+function openCancelTransactionPrompt(id) {
+  if (confirm("Batalkan transaksi ini?")) {
+    let item = transactions.find(t => t.id === id);
+    if (item) {
+      item.status = "Batal";
+      saveData();
+      showToast("Transaksi dibatalkan");
+      showPage("transactionsPage");
+      renderAll();
+    }
   }
-  const searchInput = document.getElementById("transactionSearchInput");
-  if (searchInput && searchInput.value) {
-    const q = searchInput.value.toLowerCase().trim();
-    filtered = filtered.filter(item => item.customerName && item.customerName.toLowerCase().includes(q));
-  }
-  element.innerHTML = filtered.map(transactionHTML).join("") || `<div class="empty-state">Tidak ada transaksi</div>`;
 }
+
+function removeTransactionItem(txId, itemIdx) {
+  let item = transactions.find(t => t.id === txId);
+  if (!item) return;
+  let itemsList = getTransactionItems(item);
+  if (itemsList.length <= 1) {
+    showToast("Transaksi harus memiliki minimal 1 layanan");
+    return;
+  }
+  itemsList.splice(itemIdx, 1);
+  item.items = itemsList;
+  item.total = itemsList.reduce((sum, it) => sum + it.total, 0);
+  saveData();
+  openTransactionDetail(txId);
+  showToast("Layanan dihapus");
+}
+
+let activeEditingItemContext = null;
+
+function openItemEditModal(txId, itemIdx) {
+  let item = transactions.find(t => t.id === txId);
+  if (!item) return;
+  let itemsList = getTransactionItems(item);
+  let targetItem = itemsList[itemIdx];
+  let srv = servicePrices[targetItem.serviceType];
+  
+  activeEditingItemContext = { txId, itemIdx };
+  document.getElementById("itemEditTitle").textContent = `Ubah ${targetItem.serviceType}`;
+  document.getElementById("itemEditLabel").textContent = `Berat / Jumlah (${srv ? srv.unit : 'kg'})`;
+  document.getElementById("itemEditWeightInput").value = targetItem.weight;
+  calculateItemEditTotal();
+  document.getElementById("itemEditModal").classList.add("show");
+}
+
+function closeItemEditModal() {
+  document.getElementById("itemEditModal").classList.remove("show");
+}
+
+function adjustItemEditWeight(amount) {
+  let input = document.getElementById("itemEditWeightInput");
+  let val = (parseFloat(input.value) || 0) + amount;
+  if (val < 0.1) val = 0.1;
+  input.value = val;
+  calculateItemEditTotal();
+}
+
+function calculateItemEditTotal() {
+  if (!activeEditingItemContext) return;
+  let item = transactions.find(t => t.id === activeEditingItemContext.txId);
+  let itemsList = getTransactionItems(item);
+  let targetItem = itemsList[activeEditingItemContext.itemIdx];
+  let srv = servicePrices[targetItem.serviceType];
+  let weight = parseFloat(document.getElementById("itemEditWeightInput").value) || 0;
+  let total = Math.round(weight * (srv ? srv.price : 0));
+  document.getElementById("itemEditTotalDisplay").textContent = formatRupiah(total);
+}
+
+function saveItemEdit() {
+  if (!activeEditingItemContext) return;
+  let item = transactions.find(t => t.id === activeEditingItemContext.txId);
+  let itemsList = getTransactionItems(item);
+  let targetItem = itemsList[activeEditingItemContext.itemIdx];
+  let srv = servicePrices[targetItem.serviceType];
+  let weight = parseFloat(document.getElementById("itemEditWeightInput").value) || 0;
+  
+  targetItem.weight = weight;
+  targetItem.total = Math.round(weight * (srv ? srv.price : 0));
+  item.items = itemsList;
+  item.total = itemsList.reduce((sum, it) => sum + it.total, 0);
+
+  saveData();
+  closeItemEditModal();
+  openTransactionDetail(item.id);
+  showToast("Layanan diperbarui");
+}
+
+function openAddServiceExisting(txId) {
+  let item = transactions.find(t => t.id === txId);
+  if (!item) return;
+  const container = document.getElementById("serviceSelectionList");
+  if (!container) return;
+  container.innerHTML = getSortedServiceNames().map(name => {
+    const srv = servicePrices[name];
+    return `
+      <div onclick="confirmAddServiceExisting(${txId}, '${escapeHTML(name)}')" style="padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+        <div><b>${escapeHTML(name)}</b><div style="font-size: 12px; color: var(--muted);">${formatRupiah(srv.price)} / ${srv.unit}</div></div>
+        <span style="color: var(--primary); font-size: 13px; font-weight: bold;">+ Pilih</span>
+      </div>
+    `;
+  }).join("");
+  document.getElementById("addServiceSelectModal").classList.add("show");
+}
+
+function confirmAddServiceExisting(txId, serviceName) {
+  let item = transactions.find(t => t.id === txId);
+  if (!item) return;
+  let itemsList = getTransactionItems(item);
+  let srv = servicePrices[serviceName];
+  itemsList.push({ serviceType: serviceName, weight: srv.minQty || 1, total: (srv.minQty || 1) * srv.price });
+  item.items = itemsList;
+  item.total = itemsList.reduce((sum, it) => sum + it.total, 0);
+  saveData();
+  closeAddServiceSelectModal();
+  openTransactionDetail(txId);
+  showToast("Layanan ditambahkan");
+}
+
+let activePaymentTxId = null;
+
+function openPaymentModal(txId) {
+  activePaymentTxId = txId;
+  let item = transactions.find(t => t.id === txId);
+  if (!item) return;
+  document.getElementById("payModalTotal").textContent = formatRupiah(item.total);
+  document.getElementById("payStatusSelect").value = item.paymentStatus === 'Lunas' ? 'Lunas' : 'DP';
+  document.getElementById("payMethodSelect").value = item.paymentMethod !== '-' ? item.paymentMethod : 'Tunai';
+  togglePayAmountField();
+  document.getElementById("paymentModal").classList.add("show");
+}
+
+function closePaymentModal() {
+  document.getElementById("paymentModal").classList.remove("show");
+}
+
+function togglePayAmountField() {
+  let status = document.getElementById("payStatusSelect").value;
+  let wrapper = document.getElementById("payAmountWrapper");
+  if (status === 'DP') {
+    wrapper.style.display = 'block';
+    let item = transactions.find(t => t.id === activePaymentTxId);
+    if (item) document.getElementById("payAmountInput").value = item.paidAmount || (item.total / 2);
+  } else {
+    wrapper.style.display = 'none';
+  }
+}
+
+function processPaymentSubmit() {
+  let item = transactions.find(t => t.id === activePaymentTxId);
+  if (!item) return;
+  let status = document.getElementById("payStatusSelect").value;
+  let method = document.getElementById("payMethodSelect").value;
+  
+  item.paymentStatus = status === 'Lunas' ? 'Lunas' : 'DP';
+  item.paymentMethod = method;
+  item.paidAmount = status === 'Lunas' ? item.total : (parseFloat(document.getElementById("payAmountInput").value) || 0);
+  item.paymentDate = new Date().toISOString();
+
+  saveData();
+  closePaymentModal();
+  openTransactionDetail(item.id);
+  showToast("Pembayaran disimpan");
+}
+
+function printNota(txId) {
+  showToast("Aktifkan Bluetooth: Menghubungkan printer...");
+}
+
+function printLabel(txId) {
+  showToast("Aktifkan Bluetooth: Menghubungkan printer...");
+}
+
+function sendWhatsAppNota(txId) {
+  let item = transactions.find(t => t.id === txId);
+  if (!item) return;
+  let msg = `Halo ${item.customerName}, berikut nota laundry Anda di ${arsyOutlet.name}:\nNo: TRX/${item.id}\nTotal: ${formatRupiah(item.total)}\nStatus: ${item.paymentStatus}\nTerima kasih!`;
+  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+        }
 let activeReportType = 'omset';
 
 function openReportDetail(type) {
@@ -920,25 +1194,6 @@ function showPage(pageId) {
   }
 }
 
-function openTransactionDetail(id) {
-  activeTransactionId = id;
-  const item = transactions.find(t => t.id === id);
-  if (!item) return;
-  const container = document.getElementById("detailContent");
-  if (!container) return;
-
-  container.innerHTML = `
-    <div class="report-card" style="margin-bottom: 16px;">
-      <p><b>No. Transaksi:</b> TRX/${item.id}</p>
-      <p><b>Pelanggan:</b> ${escapeHTML(item.customerName)}</p>
-      <p><b>Total:</b> ${formatRupiah(item.total)}</p>
-      <p><b>Status:</b> ${item.status}</p>
-    </div>
-    <button type="button" class="submit-button" style="background: var(--primary); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;" onclick="showPage('transactionsPage')">Kembali</button>
-  `;
-  showPage("transactionDetailPage");
-}
-
 function showToast(msg) {
   const toast = document.getElementById("toast");
   if (!toast) return;
@@ -949,6 +1204,73 @@ function showToast(msg) {
 
 function escapeHTML(text) {
   return String(text).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
+function renderAll() {
+  updateDashboard();
+  renderRecentTransactions();
+  renderAllTransactions();
+  renderServices();
+  setupDashboardInteractions();
+  setupReportInteractions();
+  setupServiceInteractions();
+  setupTransactionTabs();
+  removeProElements();
+}
+
+function updateDashboard() {
+  transactions = Array.from(new Map(transactions.map(t => [t.id, t])).values());
+  const todayData = transactions.filter(item => isToday(item.date) && item.status !== "Batal");
+  const todayValidIncome = transactions
+    .filter(item => item.status !== "Batal" && (item.paymentStatus === "Lunas" || item.paidAmount > 0) && isToday(item.paymentDate || item.date))
+    .reduce((sum, item) => sum + (item.paymentStatus === "Lunas" ? item.total : item.paidAmount), 0);
+  const pending = transactions.filter(item => item.status !== "Batal" && !item.status.toLowerCase().includes("selesai")).length;
+  
+  const customerMap = new Map();
+  transactions.forEach(t => customerMap.set(t.customerName, true));
+
+  if(document.getElementById("todayIncome")) document.getElementById("todayIncome").textContent = formatRupiah(todayValidIncome);
+  if(document.getElementById("todayTransactions")) document.getElementById("todayTransactions").textContent = todayData.length;
+  if(document.getElementById("pendingTransactions")) document.getElementById("pendingTransactions").textContent = pending;
+  if(document.getElementById("totalCustomers")) document.getElementById("totalCustomers").textContent = customerMap.size;
+}
+
+function transactionHTML(item) {
+  const statusClass = item.status ? item.status.toLowerCase().replace(/\s+/g, '-') : 'pending';
+  const isLunas = item.paymentStatus === 'Lunas';
+  return `
+    <div onclick="openTransactionDetail(${item.id})" style="cursor: pointer; background: white; margin-top: 10px; border-radius: 13px; padding: 15px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h3 style="font-size: 15px; color: var(--primary);">TRX/${item.id}</h3>
+        <p style="font-weight: bold; margin-top: 2px;">${escapeHTML(item.customerName)}</p>
+        <span class="status status-${statusClass}" style="margin-top: 6px; display: inline-block;">${item.status}</span>
+      </div>
+      <div style="text-align: right;">
+        <b>${formatRupiah(item.total)}</b><br>
+        <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${isLunas ? '#dcfce7' : '#fee2e2'}; color: ${isLunas ? '#16a34a' : '#dc2626'}; font-weight: bold; display: inline-block; margin-top: 4px;">${item.paymentStatus || 'Belum Lunas'}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderRecentTransactions() {
+  const element = document.getElementById("recentTransactions");
+  if(element) element.innerHTML = transactions.slice(0, 5).map(transactionHTML).join("") || `<div class="empty-state">Belum ada transaksi</div>`;
+}
+
+function renderAllTransactions() {
+  const element = document.getElementById("allTransactions");
+  if (!element) return;
+  let filtered = transactions;
+  if (currentTransactionFilter !== 'Semua') {
+    filtered = filtered.filter(item => item.status && item.status.toLowerCase().includes(currentTransactionFilter.toLowerCase()));
+  }
+  const searchInput = document.getElementById("transactionSearchInput");
+  if (searchInput && searchInput.value) {
+    const q = searchInput.value.toLowerCase().trim();
+    filtered = filtered.filter(item => item.customerName && item.customerName.toLowerCase().includes(q));
+  }
+  element.innerHTML = filtered.map(transactionHTML).join("") || `<div class="empty-state">Tidak ada transaksi</div>`;
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -967,4 +1289,4 @@ document.addEventListener("DOMContentLoaded", function () {
   setupServiceInteractions();
   setupTransactionTabs();
 });
-      
+  
