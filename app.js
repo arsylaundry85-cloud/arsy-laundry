@@ -1300,11 +1300,12 @@ function openPaymentModal(id) {
   const payAmountInput = document.getElementById("payAmountInput");
   if(payAmountInput) payAmountInput.value = remaining > 0 ? remaining : item.total;
 
-  const payStatusSelect = document.getElementById("payStatusSelect");
+    const payStatusSelect = document.getElementById("payStatusSelect");
   if(payStatusSelect) {
-    payStatusSelect.value = "DP";
+    payStatusSelect.value = item.paymentStatus || "Belum Lunas";
     handlePayStatusChange();
   }
+
 
   const payMethodSelect = document.getElementById("payMethodSelect");
   if (payMethodSelect && item.paymentMethod && item.paymentMethod !== "-") {
