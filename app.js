@@ -2168,40 +2168,45 @@ function openCancelPaymentModal(id) {
 
 function openAddServiceToTransactionModal() {
   const searchInput = document.getElementById("serviceSearchInput");
-  if (searchInput) searchInput.value = "";
-  
-  filterServiceSelectionList();
+  if (searchInput) {
+    searchInput.value = "";
+  }
   
   const modal = document.getElementById("addServiceSelectModal");
-  if (modal) modal.classList.add("show");
+  if (modal) {
+    modal.classList.add("show");
+    if (typeof filterServiceSelectionList === "function") {
+      filterServiceSelectionList();
+    }
+  }
 }
 
 function filterServiceSelectionList() {
   try {
     const searchInput = document.getElementById("serviceSearchInput");
-    const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+    const query = searchInput && searchInput.value ? searchInput.value.toLowerCase().trim() : "";
     const container = document.getElementById("serviceSelectionList");
     if (!container) return;
 
-    const names = typeof getSortedServiceNames === "function" ? getSortedServiceNames() : Object.keys(servicePrices || {});
+    const pricesObj = typeof servicePrices !== "undefined" ? servicePrices : {};
+    const names = Object.keys(pricesObj);
     const sortedNames = names.filter(name => name.toLowerCase().includes(query));
-    
+
     if (sortedNames.length === 0) {
-      container.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--muted); font-size: 13px;">Layanan tidak ditemukan</div>`;
+      container.innerHTML = `<div style="text-align: center; padding: 20px; color: #888; font-size: 13px;">Layanan tidak ditemukan</div>`;
       return;
     }
 
     container.innerHTML = sortedNames.map(name => {
-      const srv = servicePrices[name] || {};
-      const price = srv.price || 0;
-      const unit = srv.unit || '';
+      const srv = pricesObj[name] || {};
+      const priceStr = typeof formatRupiah === "function" ? formatRupiah(srv.price || 0) : (srv.price || 0);
       return `
-        <div onclick="addServiceToCurrentTransaction('${escapeHTML(name)}')" style="padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+        <div onclick="addServiceToCurrentTransaction('${name.replace(/'/g, "\\'")}')" style="padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <b style="font-size: 14px; color: var(--text);">${escapeHTML(name)}</b>
-            <div style="font-size: 12px; color: var(--muted);">${formatRupiah(price)} / ${unit}</div>
+            <b style="font-size: 14px; color: #333;">${name}</b>
+            <div style="font-size: 12px; color: #666;">${priceStr} / ${srv.unit || ''}</div>
           </div>
-          <span style="color: var(--primary); font-size: 13px; font-weight: bold;">+ Pilih</span>
+          <span style="color: #007bff; font-size: 13px; font-weight: bold;">+ Pilih</span>
         </div>
       `;
     }).join("");
@@ -2209,4 +2214,3 @@ function filterServiceSelectionList() {
     console.error("Filter error:", err);
   }
 }
-
