@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1769e0">
+  <title>Arsy Laundry</title>
+  <link rel="stylesheet" href="style.css?v=10">
+</head>
+<body>
+
+  <header class="topbar">
+    <div>
+      <p class="small-text">Selamat datang di</p>
+      <h1>Arsy Laundry</h1>
+    </div>
+    <div class="profile-icon">AL</div>
+  </header>
+
+  <main class="container">
+
+    <!-- Dashboard Page -->
+    <section id="dashboardPage" class="page active">
+      <div class="welcome-card">
+        <div>
+          <p>Kelola laundry lebih mudah</p>
+          <h2>Arsy Laundry</h2>
+        </div>
+        <span class="laundry-icon">🧺</span>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <span class="stat-icon blue">💰</span>
+          <p>Omzet Hari Ini</p>
+          <h3 id="todayIncome">Rp0</h3>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-icon green">🧾</span>
+          <p>Transaksi Hari Ini</p>
+          <h3 id="todayTransactions">0</h3>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-icon orange">⏳</span>
+          <p>Belum Selesai</p>
+          <h3 id="pendingTransactions">0</h3>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-icon purple">👥</span>
+          <p>Total Pelanggan</p>
+          <h3 id="totalCustomers">0</h3>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <h2>Aksi Cepat</h2>
+      </div>
+
+      <div class="quick-actions">
+        <button class="quick-button" onclick="openTransactionModal()">
+          <span>➕</span>
+          <b>Transaksi Baru</b>
+        </button>
+
+        <button class="quick-button" onclick="showPage('servicesPage')">
+          <span>🧼</span>
+          <b>Layanan</b>
+        </button>
+
+        <button class="quick-button" onclick="showPage('reportsPage')">
+          <span>📊</span>
+          <b>Laporan</b>
+        </button>
+
+        <button class="quick-button" onclick="showPage('akunPage')">
+          <span>⚙️</span>
+          <b>Akun & Nota</b>
+        </button>
+      </div>
+
+      <div class="section-title">
+        <h2>Transaksi Terbaru</h2>
+        <button class="link-button" onclick="showPage('transactionsPage')">
+          Lihat Semua
+        </button>
+      </div>
+
+      <div id="recentTransactions" class="transaction-list"></div>
+    </section>
+
+    <!-- Transactions Page -->
+    <section id="transactionsPage" class="page">
+      <div class="transaction-tabs-container" style="overflow-x: auto; white-space: nowrap; background: white; padding: 10px 15px; border-bottom: 1px solid var(--border); display: flex; gap: 8px;">
+        <button type="button" class="trans-tab active" onclick="filterTransactionsTab('Semua', this)" style="background: #e1edff; color: var(--primary); padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; border: 0;">Semua</button>
+        <button type="button" class="trans-tab" onclick="filterTransactionsTab('Antrian', this)" style="background: #f4f7fb; color: var(--muted); padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; border: 0;">Antrian</button>
+        <button type="button" class="trans-tab" onclick="filterTransactionsTab('Proses', this)" style="background: #f4f7fb; color: var(--muted); padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; border: 0;">Proses</button>
+        <button type="button" class="trans-tab" onclick="filterTransactionsTab('Siap Diambil', this)" style="background: #f4f7fb; color: var(--muted); padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; border: 0;">Siap Diambil</button>
+        <button type="button" class="trans-tab" onclick="filterTransactionsTab('Selesai', this)" style="background: #f4f7fb; color: var(--muted); padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; border: 0;">Selesai</button>
+        <button type="button" class="trans-tab" onclick="filterTransactionsTab('Batal', this)" style="background: #f4f7fb; color: var(--muted); padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; border: 0;">Batal</button>
+      </div>
+
+      <div class="page-heading" style="padding: 10px 15px; margin: 0;">
+        <h2>Daftar Transaksi</h2>
+        <button class="primary-button" onclick="openTransactionModal()">+ Baru</button>
+      </div>
+      <div id="allTransactions" class="transaction-list" style="padding: 0 15px 20px;"></div>
+    </section>
+
+    <!-- Services Page -->
+    <section id="servicesPage" class="page service-page">
+      <div class="page-heading">
+        <h2>Daftar Layanan</h2>
+      </div>
+      <div id="servicesList" class="service-list"></div>
+      
+      <div class="action-bottom-bar">
+        <button type="button" class="btn-icon">⋮</button>
+        <button type="button" class="btn-solid" onclick="openServiceModal()">Tambah Layanan</button>
+      </div>
+    </section>
+
+    <!-- Reports Menu Page -->
+    <section id="reportsPage" class="page report-page">
+      <div class="report-header">
+        <button class="report-back" onclick="showPage('dashboardPage')">‹</button>
+        <div>
+          <h1>Laporan</h1>
+          <p>Ringkasan aktivitas laundry</p>
+        </div>
+      </div>
+
+      <div class="report-content">
+        <div class="report-menu">
+          <button type="button" class="report-menu-item" onclick="openReportDetail('omset', 'Laporan Omset Transaksi')">
+            <div class="report-menu-icon">📊</div>
+            <div class="report-menu-text">
+              <strong>Laporan Omset Transaksi</strong>
+              <small>Omzet seluruh transaksi masuk</small>
+            </div>
+            <div class="report-menu-arrow">›</div>
+          </button>
+
+          <button type="button" class="report-menu-item" onclick="openReportDetail('masuk', 'Laporan Transaksi Masuk')">
+            <div class="report-menu-icon">📥</div>
+            <div class="report-menu-text">
+              <strong>Laporan Transaksi Masuk</strong>
+              <small>Semua data transaksi laundry</small>
+            </div>
+            <div class="report-menu-arrow">›</div>
+          </button>
+
+          <button type="button" class="report-menu-item" onclick="openReportDetail('lunas', 'Laporan Transaksi Lunas')">
+            <div class="report-menu-icon">💰</div>
+            <div class="report-menu-text">
+              <strong>Laporan Transaksi Lunas</strong>
+              <small>Transaksi yang sudah lunas</small>
+            </div>
+            <div class="report-menu-arrow">›</div>
+          </button>
+
+          <button type="button" class="report-menu-item" onclick="openReportDetail('selesai', 'Laporan Transaksi Selesai')">
+            <div class="report-menu-icon">✅</div>
+            <div class="report-menu-text">
+              <strong>Laporan Transaksi Selesai</strong>
+              <small>Transaksi berstatus selesai</small>
+            </div>
+            <div class="report-menu-arrow">›</div>
+          </button>
+
+          <button type="button" class="report-menu-item" onclick="openReportDetail('batal', 'Laporan Transaksi Batal')">
+            <div class="report-menu-icon">❌</div>
+            <div class="report-menu-text">
+              <strong>Laporan Transaksi Batal</strong>
+              <small>Transaksi yang dibatalkan</small>
+            </div>
+            <div class="report-menu-arrow">›</div>
+          </button>
+
+          <button type="button" class="report-menu-item" onclick="openReportDetail('pembayaran', 'Laporan Pembayaran')">
+            <div class="report-menu-icon">💳</div>
+            <div class="report-menu-text">
+              <strong>Laporan Pembayaran</strong>
+              <small>Rincian status pembayaran</small>
+            </div>
+            <div class="report-menu-arrow">›</div>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Akun Page -->
+    <section id="akunPage" class="page report-page">
+      <div style="background: white; padding: 20px 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 15px;">
+        <div style="background: var(--primary); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px;">AL</div>
+        <div>
+          <h2 style="font-size: 16px; color: var(--text); margin-bottom: 2px;">Arsy Laundry</h2>
+          <p style="font-size: 12px; color: var(--muted); line-height: 1.4;">Jl. Dukuh Kupang, Gg. Lebar, No.76, Kota Surabaya</p>
+          <p style="font-size: 12px; color: var(--muted); margin-top: 2px;">081282466642</p>
+          <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px;">
+            <span style="background: #dcfce7; color: #16a34a; font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 4px;">Pro</span>
+            <span style="font-size: 11px; color: var(--muted);">Tgl Berakhir: 07 Sep 2026</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="report-content" style="padding-top: 15px;">
+        <div class="report-menu">
+          <button type="button" class="report-menu-item" onclick="showToast('Fitur Ubah Data Outlet')">
+            <div class="report-menu-icon">🏠</div>
+            <div class="report-menu-text"><strong>Ubah Data Outlet</strong></div>
+            <div class="report-menu-arrow">›</div>
+          </button>
+
+          <button type="button" class="report-menu-item" onclick="showPage('printerPage')">
+            <div class="report-menu-icon">🖨️</div>
+            <div class="report-menu-text"><strong>Printer</strong></div>
+            <div class="report-menu-arrow">›</div>
+          </button>
+
+          <button type="button" class="report-menu-item" onclick="showPage('notaPage')">
+            <div class="report-menu-icon">📄</div>
+            <div class="report-menu-text"><strong>Pengaturan Nota</strong></div>
+            <div class="report-menu-arrow">›</div>
+          </button>
+
+          <button type="button" class="report-menu-item" onclick="showToast('Status Pro Aktif')">
+            <div class="report-menu-icon">⭐</div>
+            <div class="report-menu-text"><strong>Arsy Laundry pro</strong></div>
+            <div class="report-menu-arrow">›</div>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Printer Page -->
+    <section id="printerPage" class="page report-page">
+      <div class="report-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button type="button" class="report-back" onclick="showPage('akunPage')" style="margin:0;">‹</button>
+          <div>
+            <h1>Printer</h1>
+            <p>Pengaturan perangkat cetak nota</p>
+          </div>
+        </div>
+        <button type="button" class="primary-button" onclick="testPrinterConnection()" style="font-size: 12px; padding: 6px 12px;">Hubungkan</button>
+      </div>
+
+      <div class="report-content">
+        <div id="printerStatusContainer">
+          <div class="report-card" style="margin-bottom: 15px;">
+            <p class="report-label">PRINTER TERHUBUNG</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+              <div>
+                <strong id="printerNameLabel" style="font-size: 15px; color: var(--primary);">RPPO2N</strong>
+                <p id="printerMacLabel" style="font-size: 12px; color: var(--muted); margin-top: 2px;">60:6E:41:63:65:00</p>
+              </div>
+              <button type="button" class="link-button" onclick="openPrinterSettingModal()" style="font-size: 13px; font-weight: bold;">Ubah</button>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="submit-button" onclick="requestBluetoothPrinter()">Tambah Printer</button>
+      </div>
+    </section>
+
+    <!-- Pengaturan Nota Page -->
+    <section id="notaPage" class="page report-page">
+      <div class="report-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button type="button" class="report-back" onclick="showPage('akunPage')" style="margin:0;">‹</button>
+          <div>
+            <h1>Pengaturan Nota</h1>
+            <p>Kustomisasi cetak struk</p>
+          </div>
+        </div>
+        <button type="button" class="link-button" onclick="openPreviewNotaModal()" style="font-size: 13px; font-weight: bold; color: var(--primary);">Lihat Nota</button>
+      </div>
+
+      <div class="report-content">
+        <div class="report-card" style="margin-bottom: 16px;">
+          <p class="report-label">LOGO NOTA</p>
+          <div style="text-align: center; padding: 15px 0;">
+            <div style="width: 70px; height: 70px; background: #e1edff; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 24px;">🧺</div>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 8px;">Logo Arsy Laundry</p>
+          </div>
+        </div>
+
+        <div class="report-card" style="margin-bottom: 16px; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: var(--text);">Sembunyikan Logo</span>
+            <label class="switch"><input type="checkbox" id="setHideLogo" onchange="saveNotaSettings()"><span class="slider"></span></label>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: var(--text);">Sembunyikan Nama Outlet</span>
+            <label class="switch"><input type="checkbox" id="setHideOutlet" onchange="saveNotaSettings()"><span class="slider"></span></label>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: var(--text);">Sembunyikan Alamat</span>
+            <label class="switch"><input type="checkbox" id="setHideAddress" onchange="saveNotaSettings()"><span class="slider"></span></label>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: var(--text);">Sembunyikan Nama Kasir</span>
+            <label class="switch"><input type="checkbox" id="setHideCashier" onchange="saveNotaSettings()"><span class="slider"></span></label>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: var(--text);">Sembunyikan Nama Pelanggan</span>
+            <label class="switch"><input type="checkbox" id="setHideCustomer" onchange="saveNotaSettings()"><span class="slider"></span></label>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: var(--text);">Tampilkan Kategori Layanan</span>
+            <label class="switch"><input type="checkbox" id="setShowCategory" onchange="saveNotaSettings()"><span class="slider"></span></label>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: var(--text);">Sembunyikan Pesan pada Nota Fisik</span>
+            <label class="switch"><input type="checkbox" id="setHideMessage" onchange="saveNotaSettings()"><span class="slider"></span></label>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: var(--text);">Sembunyikan Parfum</span>
+            <label class="switch"><input type="checkbox" id="setHideParfum" onchange="saveNotaSettings()"><span class="slider"></span></label>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: var(--text);">Sembunyikan 'Powered by Arsy'</span>
+            <label class="switch"><input type="checkbox" id="setHidePowered" onchange="saveNotaSettings()"><span class="slider"></span></label>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; color: var(--text);">Tampilkan Hari Pada Estimasi Selesai</span>
+            <label class="switch"><input type="checkbox" id="setShowEstDay" checked onchange="saveNotaSettings()"><span class="slider"></span></label>
+          </div>
+        </div>
+
+        <button type="button" class="submit-button" onclick="showToast('Pengaturan nota disimpan')">Simpan</button>
+      </div>
+    </section>
+
+    <!-- Report Detail Sub-Page -->
+    <section id="reportDetailPage" class="page report-page">
+      <div class="report-header">
+        <button type="button" class="report-back" onclick="showPage('reportsPage')">‹</button>
+        <div>
+          <h1 id="reportDetailTitle">Laporan</h1>
+          <p>Ringkasan aktivitas laundry</p>
+        </div>
+      </div>
+
+      <div class="report-content">
+        <div class="report-summary">
+          <div class="report-card blue">
+            <span class="report-label">Total Pendapatan</span>
+            <strong id="reportIncome">Rp0</strong>
+          </div>
+          <div class="report-card">
+            <span class="report-label">Total Transaksi</span>
+            <strong id="reportTotal">0</strong>
+          </div>
+          <div class="report-card">
+            <span class="report-label">Selesai / Lunas</span>
+            <strong id="reportCompleted">0</strong>
+          </div>
+          <div class="report-card">
+            <span class="report-label">Batal</span>
+            <strong id="reportCancelled">0</strong>
+          </div>
+        </div>
+
+        <div class="report-section-title">
+          <h2>Filter Laporan</h2>
+        </div>
+
+        <div class="report-filter">
+          <input type="date" id="reportStartDate" onchange="filterReportsData()">
+          <input type="date" id="reportEndDate" onchange="filterReportsData()">
+          <select id="reportStatusFilter" onchange="filterReportsData()">
+            <option value="semua">Semua Status</option>
+            <option value="Antrian">Antrian</option>
+            <option value="Proses">Proses</option>
+            <option value="Siap Diambil">Siap Diambil</option>
+            <option value="Selesai">Selesai</option>
+            <option value="Lunas">Lunas</option>
+            <option value="Batal">Batal</option>
+          </select>
+        </div>
+
+        <div class="report-section-title">
+          <h2>Data Transaksi</h2>
+          <span id="reportTransactionCount">0 transaksi</span>
+        </div>
+
+        <div class="report-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Layanan</th>
+                <th>Total</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="reportTableBody">
+              <tr><td colspan="3"><div class="report-empty">Belum ada data transaksi</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="reportSummaryFooter" style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-top: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: none;">
+        </div>
+
+        <button type="button" class="report-export" onclick="exportReport()" style="margin-top: 20px;">Ekspor Laporan</button>
+      </div>
+    </section>
+
+    <!-- Detail Transaction Page -->
+    <section id="transactionDetailPage" class="page report-page">
+      <div class="report-header" style="display: flex; justify-content: space-between; align-items: center; position: relative;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button type="button" class="report-back" onclick="showPage('transactionsPage')" style="margin:0;">‹</button>
+          <div>
+            <h1>Detail Transaksi</h1>
+            <p>Rincian status dan pembayaran</p>
+          </div>
+        </div>
+        <div style="position: relative;">
+          <button type="button" onclick="toggleDetailMenu()" style="background: none; border: none; font-size: 22px; cursor: pointer; padding: 5px 10px; color: var(--text);">⋮</button>
+          <div id="detailMenuDropdown" style="display: none; position: absolute; right: 0; top: 35px; background: white; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 180px; z-index: 100;">
+            <button type="button" onclick="openCancelModal()" style="width: 100%; text-align: left; padding: 12px 15px; background: none; border: none; color: #dc2626; font-weight: bold; cursor: pointer; font-size: 14px;">Batalkan Transaksi</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="report-content" id="detailContent">
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Navigasi Bawah -->
+  <nav class="bottom-nav">
+    <button class="nav-button active" data-page="dashboardPage" onclick="showPage('dashboardPage')">
+      <span>🏠</span>
+      <small>Dashboard</small>
+    </button>
+    <button class="nav-button" data-page="transactionsPage" onclick="showPage('transactionsPage')">
+      <span>📋</span>
+      <small>Transaksi</small>
+    </button>
+    <button class="nav-button add-button" onclick="openTransactionModal()">
+      <span>+</span>
+    </button>
+    <button class="nav-button" data-page="reportsPage" onclick="showPage('reportsPage')">
+      <span>📊</span>
+      <small>Laporan</small>
+    </button>
+    <button class="nav-button" data-page="akunPage" onclick="showPage('akunPage')">
+      <span>👤</span>
+      <small>Akun</small>
+    </button>
+  </nav>
+
+  <!-- Modal Transaksi Baru -->
+  <div id="transactionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Transaksi Baru</h2>
+        <button class="close-button" onclick="closeTransactionModal()">×</button>
+      </div>
+      <form id="transactionForm">
+        <label for="customerName">Nama Pelanggan</label>
+        <input type="text" id="customerName" placeholder="Contoh: Budi" required>
+
+        <label for="serviceType">Jenis Layanan</label>
+        <select id="serviceType" required>
+        </select>
+
+        <label for="weight">Berat / Jumlah</label>
+        <input type="number" id="weight" min="1" step="0.1" placeholder="Contoh: 3" required>
+
+        <label for="status">Status</label>
+        <select id="status">
+          <option value="Antrian">Antrian</option>
+          <option value="Proses">Proses</option>
+          <option value="Siap Diambil">Siap Diambil</option>
+          <option value="Selesai">Selesai</option>
+          <option value="Lunas">Lunas</option>
+          <option value="Batal">Batal</option>
+        </select>
+
+        <button type="submit" class="submit-button">Simpan Transaksi</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Ubah Printer -->
+  <div id="printerSettingModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Ubah Printer</h2>
+        <button type="button" class="close-button" onclick="closePrinterSettingModal()">×</button>
+      </div>
+      <div style="padding: 5px 0;">
+        <label style="font-size: 13px; font-weight: bold; color: var(--text);">Nama Printer</label>
+        <input type="text" id="inputPrinterName" value="RPPO2N" style="width: 100%; padding: 10px; margin-top: 6px; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 8px;">
+
+        <label style="font-size: 13px; font-weight: bold; color: var(--text); display: block; margin-bottom: 8px;">Ukuran Kertas</label>
+        <div style="display: flex; gap: 20px; margin-bottom: 15px;">
+          <label style="display: flex; align-items: center; gap: 6px;"><input type="radio" name="paperSize" value="58" checked> 58</label>
+          <label style="display: flex; align-items: center; gap: 6px;"><input type="radio" name="paperSize" value="80"> 80</label>
+        </div>
+
+        <button type="submit" class="submit-button" onclick="savePrinterSettingsModal()">Simpan</button>
+        <button type="button" class="submit-button" style="background: #dc2626; margin-top: 10px;" onclick="disconnectPrinter()">Putus Koneksi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pratinjau Nota -->
+  <div id="previewNotaModal" class="modal">
+    <div class="modal-content" style="max-width: 340px;">
+      <div class="modal-header">
+        <h2>Pratinjau Nota</h2>
+        <button type="button" class="close-button" onclick="closePreviewNotaModal()">×</button>
+      </div>
+      <div id="previewNotaBody" style="background: #fff; padding: 15px; font-family: monospace; font-size: 12px; line-height: 1.4; border: 1px dashed var(--border); max-height: 400px; overflow-y: auto;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Layanan Baru -->
+  <div id="serviceModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Tambah Layanan</h2>
+        <button type="button" class="close-button" onclick="closeServiceModal()">×</button>
+      </div>
+      <form id="serviceForm">
+        <label for="servName">Nama</label>
+        <input type="text" id="servName" placeholder="Misal: Cuci Basah" required>
+
+        <label for="servPrice">Harga</label>
+        <input type="number" id="servPrice" required placeholder="0">
+
+        <label for="servUnit">Satuan</label>
+        <select id="servUnit">
+          <option value="kg">kg</option>
+          <option value="meter">meter</option>
+          <option value="pc">pc</option>
+          <option value="set">set</option>
+        </select>
+
+        <button type="submit" class="submit-button">Tambah</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Pembayaran -->
+  <div id="paymentModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Pembayaran</h2>
+        <button type="button" class="close-button" onclick="closePaymentModal()">×</button>
+      </div>
+      <form id="paymentForm">
+        <p style="margin-bottom: 12px;">Total Tagihan: <b id="payTotalText" style="color: var(--primary);">Rp0</b></p>
+        
+        <label>Status Pembayaran</label>
+        <select id="payStatusSelect">
+          <option value="Belum Lunas">Belum Lunas</option>
+          <option value="DP">DP</option>
+          <option value="Lunas">Lunas</option>
+        </select>
+
+        <button type="submit" class="submit-button">Bayar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Batalkan Transaksi -->
+  <div id="cancelModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Batalkan Transaksi</h2>
+        <button type="button" class="close-button" onclick="closeCancelModal()">×</button>
+      </div>
+      <form id="cancelForm">
+        <label for="cancelReason">Alasan Pembatalan</label>
+        <input type="text" id="cancelReason" placeholder="Masukkan alasan pembatalan" required style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid var(--border); border-radius: 8px;">
+
+        <button type="submit" class="submit-button" style="background: #dc2626; margin-top: 15px;">Simpan</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js?v=9"></script>
+</body>
+</html>
