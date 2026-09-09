@@ -478,7 +478,7 @@ function setupAkunOutletLink() {
       el.onclick = () => openOutletPage();
     }
   });
-}
+    }
 function saveServicesData() {
   safeStorage.setItem("arsyServices", JSON.stringify(servicePrices));
   saveData();
@@ -626,6 +626,7 @@ function renderAll() {
   setupDashboardInteractions();
   setupReportInteractions();
   setupServiceInteractions();
+  setupTransactionTabs();
   removeProElements();
 }
 
@@ -682,7 +683,7 @@ function renderAllTransactions() {
     filtered = filtered.filter(item => item.customerName && item.customerName.toLowerCase().includes(q));
   }
   element.innerHTML = filtered.map(transactionHTML).join("") || `<div class="empty-state">Tidak ada transaksi</div>`;
-                                                                                          }
+}
 let activeReportType = 'omset';
 
 function openReportDetail(type) {
@@ -836,6 +837,25 @@ function setupServiceInteractions() {
   });
 }
 
+function setupTransactionTabs() {
+  const transactionPage = document.getElementById("transactionsPage");
+  if (!transactionPage) return;
+  const tabs = transactionPage.querySelectorAll(".transaction-tabs-container button, .transaction-tabs-container div, [style*='display: flex'] button");
+  tabs.forEach(tab => {
+    if (!tab.dataset.boundTab) {
+      tab.dataset.boundTab = "true";
+      tab.style.cursor = "pointer";
+      tab.onclick = () => {
+        const text = tab.textContent.trim();
+        if (["Semua", "Antrian", "Proses", "Siap Diambil", "Selesai"].includes(text)) {
+          currentTransactionFilter = text;
+          renderAllTransactions();
+        }
+      };
+    }
+  });
+}
+
 function openDashboardDetail(type) {
   const titleEl = document.getElementById("dashDetailTitle");
   const contentEl = document.getElementById("dashDetailContent");
@@ -945,24 +965,6 @@ document.addEventListener("DOMContentLoaded", function () {
   setupDashboardInteractions();
   setupReportInteractions();
   setupServiceInteractions();
+  setupTransactionTabs();
 });
- function setupTransactionTabs() {
-  const transactionPage = document.getElementById("transactionsPage");
-  if (!transactionPage) return;
-  const tabs = transactionPage.querySelectorAll(".transaction-tabs-container button, .transaction-tabs-container div, [style*='display: flex'] button");
-  
-  tabs.forEach(tab => {
-    if (!tab.dataset.boundTab) {
-      tab.dataset.boundTab = "true";
-      tab.style.cursor = "pointer";
-      tab.onclick = () => {
-        const text = tab.textContent.trim();
-        if (["Semua", "Antrian", "Proses", "Siap Diambil", "Selesai"].includes(text)) {
-          currentTransactionFilter = text;
-          renderAllTransactions();
-        }
-      };
-    }
-  });
- }
-
+      
