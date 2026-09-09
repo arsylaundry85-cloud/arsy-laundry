@@ -581,7 +581,7 @@ function deleteCurrentService() {
     closeServiceModal();
     showToast("Layanan dihapus");
   }
-    }
+}
 function openAddServiceToTransactionModal() {
   const container = document.getElementById("serviceSelectionList");
   if (!container) return;
@@ -689,7 +689,6 @@ function setupForm() {
     });
   }
 }
-
 function openTransactionDetail(id) {
   activeTransactionId = id;
   const item = transactions.find(t => t.id === id);
@@ -897,7 +896,6 @@ function confirmAddServiceExisting(txId, serviceName) {
   openTransactionDetail(txId);
   showToast("Layanan ditambahkan");
 }
-
 let activePaymentTxId = null;
 
 function openPaymentModal(txId) {
@@ -955,9 +953,49 @@ function printLabel(txId) {
 function sendWhatsAppNota(txId) {
   let item = transactions.find(t => t.id === txId);
   if (!item) return;
-  let msg = `Halo ${item.customerName}, berikut nota laundry Anda di ${arsyOutlet.name}:\nNo: TRX/${item.id}\nTotal: ${formatRupiah(item.total)}\nStatus: ${item.paymentStatus}\nTerima kasih!`;
-  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
-        }
+
+  let phone = item.customerPhone || prompt(`Masukkan nomor WhatsApp ${item.customerName} (Contoh: 628123456789):`, "");
+  if (!phone) return;
+  
+  phone = phone.trim().replace(/^0/, "62").replace(/[^0-9]/g, "");
+  item.customerPhone = phone;
+  saveData();
+
+  let itemsList = getTransactionItems(item);
+  let layananText = itemsList.map(it => {
+    let srv = servicePrices[it.serviceType];
+    let unitPrice = srv ? srv.price : (it.total / (it.weight || 1));
+    return `${it.serviceType}\n${it.weight} x ${formatRupiah(unitPrice)} = ${formatRupiah(it.total)}`;
+  }).join("\n--------------------------------\n");
+
+  let estStr = formatDate(getEstDate(item));
+  let paidAmt = item.paymentStatus === 'Lunas' ? item.total : (item.paidAmount || 0);
+  let sisaTagihan = item.paymentStatus === 'Lunas' ? 0 : (item.total - paidAmt);
+
+  let msg = `*[ LOGO Arsy Laundry ]*\n\n` +
+            `*${arsyOutlet.name}*\n` +
+            `${arsyOutlet.address}, ${arsyOutlet.city}\n` +
+            `${arsyOutlet.phone}\n` +
+            `--------------------------------\n` +
+            `*Pelanggan: ${item.customerName}*\n` +
+            `No. Transaksi: TRX/${item.id}\n` +
+            `Waktu: ${formatDate(item.date)}\n` +
+            `Kasir: Arif\n` +
+            `Est. Selesai: ${estStr}\n` +
+            `--------------------------------\n` +
+            `*Layanan:*\n` +
+            `${layananText}\n` +
+            `--------------------------------\n` +
+            `*Total: ${formatRupiah(item.total)}*\n` +
+            `Dibayar (${item.paymentStatus}): ${formatRupiah(paidAmt)}\n` +
+            `Sisa Tagihan: ${formatRupiah(sisaTagihan)}\n` +
+            `Status: ${item.paymentStatus || 'Belum Lunas'}\n` +
+            `Metode Pembayaran: ${item.paymentMethod || '-'}\n\n` +
+            `_Powered by ${arsyOutlet.name}_`;
+
+  const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+}
 let activeReportType = 'omset';
 
 function openReportDetail(type) {
@@ -1009,7 +1047,7 @@ function renderReportData() {
   }
 
   let totalPendapatan = filtered.reduce((sum, item) => sum + (item.paymentStatus === 'Lunas' ? item.total : (item.paidAmount || 0)), 0);
-  let selesaiLunasCount = transactions.filter(item => item.status !== "Batal" && (item.paymentStatus === "Lunas" || item.status.toLowerCase().includes("selesai"))).length;
+  let selesaiLunasCount = transactions.filter(item => item.status !== "Batal" && (item.paymentStatus === 'Lunas' || item.status.toLowerCase().includes("selesai"))).length;
   let batalCount = transactions.filter(item => item.status === "Batal").length;
 
   const cardsContainer = document.getElementById("reportSummaryCards");
