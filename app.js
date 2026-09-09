@@ -1349,10 +1349,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
         item.paymentMethod = payMethod;
 
-        if (payStatus === "Lunas") {
+                if (payStatus === "Lunas") {
           item.paidAmount = item.total;
           item.paymentStatus = "Lunas";
           item.paymentDate = new Date().toISOString();
+        } else if (payStatus === "Belum Lunas") {
+          item.paidAmount = 0;
+          item.paymentStatus = "Belum Lunas";
+          item.paymentDate = null;
         } else {
           const currentPaid = item.paidAmount || 0;
           item.paidAmount = currentPaid + inputAmount;
@@ -1365,6 +1369,7 @@ document.addEventListener("DOMContentLoaded", function () {
             item.paymentDate = new Date().toISOString();
           }
         }
+
 
         saveData();
         renderAll();
