@@ -1,5 +1,6 @@
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzgPz_F6fP_B9Ou5e9yMNtIIeQkAeXjPAX8wwkt4aIAR6ctwzcdyspMpkDHeTNI6BPOIg/exec";
 
+
 const safeStorage = {
   _memory: {},
   getItem(key) {
@@ -43,6 +44,7 @@ Object.keys(servicePrices).forEach(key => {
     servicePrices[key].pinned = (key === "Cuci Kering" || key === "Cuci Setrika");
   }
 });
+
 let transactions = getSafeData("arsyTransactions", []);
 transactions = Array.from(new Map(transactions.map(t => [t.id, t])).values());
 
@@ -76,7 +78,6 @@ let activeTransactionId = null;
 let currentReportType = 'all';
 let activeNewTransactionItems = [];
 let editingTransactionItemContext = null;
-
 async function loadFromCloud() {
   try {
     let response = await fetch(WEB_APP_URL);
@@ -115,97 +116,6 @@ async function loadFromCloud() {
     renderAll();
   }
 }
-document.addEventListener("DOMContentLoaded", function () {
-  injectLoginModal();
-  injectCustomerModules();
-  injectOutletModule();
-  injectRichServiceModalHTML();
-  injectPaymentModalHTML();
-  injectReportPaymentMethodFilter();
-  injectTransactionModalHTML();
-  injectEditTransactionItemModalHTML();
-  injectTransactionSearch();
-  
-  renderAll();
-  loadFromCloud();
-  
-  setupForm();
-  loadNotaSettingsUI();
-  setupDashboardInteractions();
-  setupAkunOutletLink();
-  removeProElements();
-});
-
-function injectTransactionSearch() {
-  const transactionPage = document.getElementById("transactionsPage");
-  if (!transactionPage) return;
-
-  const tabContainer = transactionPage.querySelector(".transaction-tabs-container");
-  if (!tabContainer || document.getElementById("transactionSearchInput")) return;
-
-  const searchWrapper = document.createElement("div");
-  searchWrapper.style.cssText = "padding: 10px 15px; background: white; border-bottom: 1px solid var(--border);";
-  searchWrapper.innerHTML = `
-    <div style="position: relative;">
-      <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;">🔍</span>
-      <input type="text" id="transactionSearchInput" placeholder="Cari nama pelanggan..." 
-        style="width: 100%; padding: 10px 10px 10px 35px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none;"
-        onkeyup="renderAllTransactions()">
-    </div>
-  `;
-  tabContainer.insertAdjacentElement("afterend", searchWrapper);
-}
-
-function removeProElements() {
-  document.querySelectorAll("div, span, a, li, p").forEach(el => {
-    if (el.children.length === 0) {
-      const text = el.textContent.trim();
-      if (text.includes("Perpanjang Randori Pro")) {
-        let row = el.closest("div[style*='cursor']") || el.closest("div") || el.parentElement;
-        if (row) row.remove();
-      }
-      if (text.includes("Tgl Berakhir:") || (text.startsWith("Pro") && text.includes("Berakhir"))) {
-        el.remove();
-      }
-    }
-  });
-}
-
-function saveServicesData() {
-  safeStorage.setItem("arsyServices", JSON.stringify(servicePrices));
-}
-function loadNotaSettingsUI() {
-  if(document.getElementById("setHideLogo")) document.getElementById("setHideLogo").checked = notaSettings.hideLogo;
-  if(document.getElementById("setHideOutlet")) document.getElementById("setHideOutlet").checked = notaSettings.hideOutlet;
-  if(document.getElementById("setHideAddress")) document.getElementById("setHideAddress").checked = notaSettings.hideAddress;
-  if(document.getElementById("setHideCashier")) document.getElementById("setHideCashier").checked = notaSettings.hideCashier;
-  if(document.getElementById("setHideCustomer")) document.getElementById("setHideCustomer").checked = notaSettings.hideCustomer;
-  if(document.getElementById("setShowCategory")) document.getElementById("setShowCategory").checked = notaSettings.showCategory;
-  if(document.getElementById("setHideMessage")) document.getElementById("setHideMessage").checked = notaSettings.hideMessage;
-  if(document.getElementById("setHideParfum")) document.getElementById("setHideParfum").checked = notaSettings.hideParfum;
-  if(document.getElementById("setHidePowered")) document.getElementById("setHidePowered").checked = notaSettings.hidePowered;
-  if(document.getElementById("setShowEstDay")) document.getElementById("setShowEstDay").checked = notaSettings.showEstDay;
-
-  if(document.getElementById("printerNameLabel")) document.getElementById("printerNameLabel").textContent = notaSettings.printerName;
-  if(document.getElementById("printerMacLabel")) document.getElementById("printerMacLabel").textContent = notaSettings.printerMac;
-}
-
-function saveNotaSettings() {
-  notaSettings.hideLogo = document.getElementById("setHideLogo").checked;
-  notaSettings.hideOutlet = document.getElementById("setHideOutlet").checked;
-  notaSettings.hideAddress = document.getElementById("setHideAddress").checked;
-  notaSettings.hideCashier = document.getElementById("setHideCashier").checked;
-  notaSettings.hideCustomer = document.getElementById("setHideCustomer").checked;
-  notaSettings.showCategory = document.getElementById("setShowCategory").checked;
-  notaSettings.hideMessage = document.getElementById("setHideMessage").checked;
-  notaSettings.hideParfum = document.getElementById("setHideParfum").checked;
-  notaSettings.hidePowered = document.getElementById("setHidePowered").checked;
-  notaSettings.showEstDay = document.getElementById("setShowEstDay").checked;
-
-  safeStorage.setItem("arsyNotaSettings", JSON.stringify(notaSettings));
-  saveData();
-  showToast("Pengaturan nota disimpan");
-}
 
 async function saveData() {
   transactions = Array.from(new Map(transactions.map(t => [t.id, t])).values());
@@ -230,7 +140,41 @@ async function saveData() {
     console.log("Sinkronisasi cloud tertunda.");
   }
 }
+document.addEventListener("DOMContentLoaded", function () {
+  injectLoginModal();
+  injectCustomerModules();
+  injectOutletModule();
+  injectRichServiceModalHTML();
+  injectPaymentModalHTML();
+  injectReportPaymentMethodFilter();
+  injectTransactionModalHTML();
+  injectEditTransactionItemModalHTML();
+  injectTransactionSearch();
+  
+  renderAll();
+  loadFromCloud();
+  
+  setupForm();
+  loadNotaSettingsUI();
+  setupDashboardInteractions();
+  setupAkunOutletLink();
+  removeProElements();
+});
 
+function removeProElements() {
+  document.querySelectorAll("div, span, a, li, p").forEach(el => {
+    if (el.children.length === 0) {
+      const text = el.textContent.trim();
+      if (text.includes("Perpanjang Randori Pro")) {
+        let row = el.closest("div[style*='cursor']") || el.closest("div") || el.parentElement;
+        if (row) row.remove();
+      }
+      if (text.includes("Tgl Berakhir:") || (text.startsWith("Pro") && text.includes("Berakhir"))) {
+        el.remove();
+      }
+    }
+  });
+}
 function formatRupiah(number) {
   return "Rp " + Number(number).toLocaleString("id-ID");
 }
@@ -239,12 +183,9 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString("id-ID", {
     day: "2-digit",
     month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
+    year: "numeric"
   });
 }
-
 
 function calculateEstimationDate(dateStr, durationStr) {
   let date = new Date(dateStr);
@@ -310,17 +251,36 @@ function setupCustomerAutocomplete() {
   datalist.innerHTML = Array.from(namesSet).map(name => `<option value="${escapeHTML(name)}">`).join("");
 }
 
-function getSortedServiceNames() {
-  return Object.keys(servicePrices).sort((a, b) => {
-    let pinA = servicePrices[a].pinned ? 1 : 0;
-    let pinB = servicePrices[b].pinned ? 1 : 0;
-    if (pinA !== pinB) {
-      return pinB - pinA;
-    }
-    return a.localeCompare(b, 'id', { sensitivity: 'base' });
-  });
+function injectTransactionSearch() {
+  const transactionPage = document.getElementById("transactionsPage");
+  if (!transactionPage) return;
+
+  const tabContainer = transactionPage.querySelector(".transaction-tabs-container");
+  if (!tabContainer || document.getElementById("transactionSearchInput")) return;
+
+  const searchWrapper = document.createElement("div");
+  searchWrapper.style.cssText = "padding: 10px 15px; background: white; border-bottom: 1px solid var(--border);";
+  searchWrapper.innerHTML = `
+    <div style="position: relative;">
+      <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px;">🔍</span>
+      <input type="text" id="transactionSearchInput" placeholder="Cari nama pelanggan..." 
+        style="width: 100%; padding: 10px 10px 10px 35px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none;"
+        onkeyup="renderAllTransactions()">
+    </div>
+  `;
+  tabContainer.insertAdjacentElement("afterend", searchWrapper);
 }
 
+function filterTransactionsTab(status, element) {
+  currentTransactionFilter = status;
+  document.querySelectorAll('.trans-tab').forEach(btn => {
+    btn.style.background = '#f4f7fb';
+    btn.style.color = '#718096';
+  });
+  element.style.background = '#e1edff';
+  element.style.color = '#1769e0';
+  renderAllTransactions();
+}
 function injectTransactionModalHTML() {
   let modal = document.getElementById("transactionModal");
   if (!modal) {
@@ -330,7 +290,7 @@ function injectTransactionModalHTML() {
     document.body.appendChild(modal);
   }
   modal.innerHTML = `
-    <div class="modal-content" style="background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto;">
+    <div class="modal-content" style="background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
         <h3 style="font-size:18px; font-weight:bold; color:var(--text);">Transaksi Baru</h3>
         <button type="button" onclick="closeTransactionModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted);">&times;</button>
@@ -344,10 +304,10 @@ function injectTransactionModalHTML() {
         <div style="margin-bottom: 12px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <label style="font-size: 13px; font-weight: bold; color: var(--text);">Layanan Laundry</label>
-            <button type="button" onclick="openAddServiceToTransactionModal()" style="background: var(--primary); color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: bold;">+ Tambah Layanan</button>
+            <button type="button" onclick="openAddServiceToTransactionModal()" style="background: #e1edff; color: var(--primary); border: none; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;">+ Tambah Layanan</button>
           </div>
-          <div id="transactionItemsContainer" style="border: 1px solid var(--border); border-radius: 8px; padding: 10px; min-height: 70px; max-height: 200px; overflow-y: auto;">
-            <div style="color: var(--muted); font-size: 13px; text-align: center; padding: 15px;">Belum ada layanan dipilih</div>
+          <div id="transactionItemsContainer" style="border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: #f8fafc; min-height: 70px; max-height: 200px; overflow-y: auto;">
+            <div style="color: var(--muted); font-size: 13px; text-align: center; padding: 15px;" id="emptyItemsText">Belum ada layanan dipilih</div>
           </div>
         </div>
 
@@ -358,11 +318,15 @@ function injectTransactionModalHTML() {
             <option value="Proses">Proses</option>
             <option value="Siap Diambil">Siap Diambil</option>
             <option value="Selesai">Selesai</option>
-            <option value="Batal">Batal</option>
           </select>
         </div>
 
-        <button type="submit" class="submit-button">Simpan Transaksi</button>
+        <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-weight: bold; font-size: 14px;">Total</span>
+          <b id="transactionTotalDisplay" style="color: var(--primary); font-size: 16px;">Rp 0</b>
+        </div>
+
+        <button type="submit" class="submit-button" style="background: var(--primary); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Simpan Transaksi</button>
       </form>
     </div>
   `;
@@ -376,9 +340,6 @@ function injectTransactionModalHTML() {
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <h3 style="font-size:16px; font-weight:bold; color:var(--text);">Pilih Layanan</h3>
           <button type="button" onclick="closeAddServiceSelectModal()" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--muted);">&times;</button>
-        </div>
-        <div style="margin-bottom: 12px;">
-          <input type="text" id="serviceSearchInput" placeholder="Cari nama layanan..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline: none;" onkeyup="filterServiceSelectionList()">
         </div>
         <div id="serviceSelectionList"></div>
       </div>
@@ -444,6 +405,7 @@ function updateActiveItemWeight(index, val) {
     totalDisplay.textContent = formatRupiah(grandTotal);
   }
 }
+
 function renderActiveTransactionItems(rebuild = true) {
   const container = document.getElementById("transactionItemsContainer");
   const totalDisplay = document.getElementById("transactionTotalDisplay");
@@ -491,6 +453,42 @@ function closeTransactionModal() {
   const modal = document.getElementById("transactionModal");
   if (modal) modal.classList.remove("show");
 }
+function injectEditTransactionItemModalHTML() {
+  if (document.getElementById("editTransactionItemModal")) return;
+  const modal = document.createElement("div");
+  modal.id = "editTransactionItemModal";
+  modal.className = "modal";
+  modal.innerHTML = `
+    <div class="modal-content" style="background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 360px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 id="editItemModalTitle" style="font-size:18px; font-weight:bold; color:var(--text);">Ubah Layanan</h3>
+        <button type="button" onclick="closeEditTransactionItemModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted);">&times;</button>
+      </div>
+      <form id="editTransactionItemForm" onsubmit="saveEditTransactionItem(event)">
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 13px; color: var(--muted); display: block;" id="editItemNameLabel">Layanan</label>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px; color: var(--text);">Berat / Jumlah (<span id="editItemUnitLabel">kg</span>)</label>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button type="button" onclick="adjustEditItemWeight(-0.5)" style="background: #e1edff; color: var(--primary); border: none; width: 40px; height: 40px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;">-</button>
+            <input type="number" step="any" id="editItemWeightInput" style="flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; text-align: center;" required oninput="calculateEditItemPreview()">
+            <button type="button" onclick="adjustEditItemWeight(0.5)" style="background: #e1edff; color: var(--primary); border: none; width: 40px; height: 40px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;">+</button>
+          </div>
+        </div>
+        <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 13px; color: var(--muted);">Estimasi Total:</span>
+          <b id="editItemTotalPreview" style="color: var(--primary); font-size: 15px;">Rp 0</b>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="submit" class="submit-button" style="flex: 1; background: var(--primary); color: white; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Simpan</button>
+          <button type="button" onclick="closeEditTransactionItemModal()" class="submit-button" style="flex: 1; background: #cbd5e1; color: var(--text); padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Batal</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
 
 function openEditTransactionItem(txId, itemIdx) {
   const tx = transactions.find(t => t.id === txId);
@@ -535,6 +533,7 @@ function calculateEditItemPreview() {
   const total = Math.round(weight * srv.price);
   document.getElementById("editItemTotalPreview").textContent = formatRupiah(total);
 }
+
 function saveEditTransactionItem(e) {
   e.preventDefault();
   if (!editingTransactionItemContext) return;
@@ -620,7 +619,6 @@ function addServiceToExistingTransactionConfirm(serviceName) {
   openTransactionDetail(activeTransactionId);
   showToast("Layanan berhasil ditambahkan");
 }
-
 function setupForm() {
   const form = document.getElementById("transactionForm");
   if (form) {
@@ -694,6 +692,7 @@ function setupForm() {
     });
   }
 }
+
 function renderAll() {
   updateDashboard();
   renderRecentTransactions();
@@ -770,17 +769,6 @@ function renderRecentTransactions() {
   element.innerHTML = recent.map(transactionHTML).join("");
 }
 
-function filterTransactionsTab(status, element) {
-  currentTransactionFilter = status;
-  document.querySelectorAll('.trans-tab').forEach(btn => {
-    btn.style.background = '#f4f7fb';
-    btn.style.color = '#718096';
-  });
-  element.style.background = '#e1edff';
-  element.style.color = '#1769e0';
-  renderAllTransactions();
-}
-
 function renderAllTransactions() {
   const element = document.getElementById("allTransactions");
   if (!element) return;
@@ -814,7 +802,7 @@ function renderAllTransactions() {
   }
 
   element.innerHTML = filtered.map(transactionHTML).join("");
-}
+    }
 function injectCustomerModules() {
   if (!document.getElementById("customerPage")) {
     const div = document.createElement("div");
@@ -1006,7 +994,7 @@ function deleteCustomer(name) {
     showPage('customerPage');
     showToast("Pelanggan berhasil dihapus");
   }
-                                                                                                        }
+}
 function openDashboardDetail(type) {
   const titleEl = document.getElementById("dashDetailTitle");
   const contentEl = document.getElementById("dashDetailContent");
@@ -1095,8 +1083,7 @@ function setupDashboardInteractions() {
     const el = document.getElementById(id);
     if (!el) return;
     
-    // Menggunakan .closest('.stat-card') agar langsung mendeteksi kartu statistik di index.html tanpa meleset[span_1](start_span)[span_1](end_span)
-    let card = el.closest('.stat-card') || el.parentElement;
+    const card = el.parentElement.parentElement.children.length <= 3 ? el.parentElement.parentElement : el.parentElement;
     if (card) {
       card.style.cursor = 'pointer';
       card.onclick = (e) => {
@@ -1106,7 +1093,16 @@ function setupDashboardInteractions() {
     }
   });
 }
-
+function getSortedServiceNames() {
+  return Object.keys(servicePrices).sort((a, b) => {
+    let pinA = servicePrices[a].pinned ? 1 : 0;
+    let pinB = servicePrices[b].pinned ? 1 : 0;
+    if (pinA !== pinB) {
+      return pinB - pinA;
+    }
+    return a.localeCompare(b, 'id', { sensitivity: 'base' });
+  });
+}
 
 function renderServices() {
   const element = document.getElementById("servicesList");
@@ -1202,151 +1198,6 @@ function injectRichServiceModalHTML() {
     </div>
   `;
 }
-function injectPaymentModalHTML() {
-  let modalEl = document.getElementById("paymentModal");
-  if (!modalEl) {
-    modalEl = document.createElement("div");
-    modalEl.id = "paymentModal";
-    modalEl.className = "modal";
-    document.body.appendChild(modalEl);
-  }
-  modalEl.innerHTML = `
-    <div class="modal-content" style="background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 400px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="font-size:18px; font-weight:bold; color:var(--text);">Pembayaran</h3>
-        <button type="button" onclick="closePaymentModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted);">&times;</button>
-      </div>
-      <form id="paymentForm">
-        <div style="margin-bottom: 12px;">
-          <label style="font-size: 13px; color: var(--muted); display: block;">Total Tagihan / Sisa</label>
-          <h3 id="payTotalText" style="font-size: 18px; font-weight: bold; color: var(--primary);">Rp 0</h3>
-        </div>
-
-        <div style="margin-bottom: 12px;">
-          <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px; color: var(--text);">Status Pembayaran</label>
-          <select id="payStatusSelect" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;" onchange="handlePayStatusChange()">
-            <option value="DP">DP</option>
-            <option value="Lunas">Lunas</option>
-          </select>
-        </div>
-
-        <div style="margin-bottom: 12px;">
-          <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px; color: var(--text);">Metode Pembayaran</label>
-          <select id="payMethodSelect" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
-            <option value="Tunai">Tunai</option>
-            <option value="GoPay">GoPay</option>
-            <option value="Dana">Dana</option>
-            <option value="ShopeePay">ShopeePay</option>
-            <option value="QRIS">QRIS</option>
-            <option value="Transfer">Transfer</option>
-            <option value="Deposit">Deposit</option>
-          </select>
-        </div>
-
-        <div style="margin-bottom: 12px;" id="payAmountContainer">
-          <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px; color: var(--text);">Jumlah Pembayaran (DP)</label>
-          <input type="number" id="payAmountInput" placeholder="0" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
-        </div>
-
-        <button type="submit" class="submit-button" style="background: var(--success); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Bayar</button>
-      </form>
-    </div>
-  `;
-}
-
-function openPaymentModal(id) {
-  activeTransactionId = id;
-  const item = transactions.find(t => t.id === id);
-  if (!item) return;
-
-  const remaining = item.total - (item.paidAmount || 0);
-  const payTotalText = document.getElementById("payTotalText");
-  if(payTotalText) payTotalText.textContent = formatRupiah(remaining > 0 ? remaining : item.total);
-
-  const payAmountInput = document.getElementById("payAmountInput");
-  if(payAmountInput) payAmountInput.value = remaining > 0 ? remaining : item.total;
-
-    const payStatusSelect = document.getElementById("payStatusSelect");
-  if(payStatusSelect) {
-    payStatusSelect.value = item.paymentStatus || "Belum Lunas";
-    handlePayStatusChange();
-  }
-
-
-  const payMethodSelect = document.getElementById("payMethodSelect");
-  if (payMethodSelect && item.paymentMethod && item.paymentMethod !== "-") {
-    payMethodSelect.value = item.paymentMethod;
-  }
-
-  document.getElementById("paymentModal").classList.add("show");
-}
-
-function handlePayStatusChange() {
-  const status = document.getElementById("payStatusSelect").value;
-  const container = document.getElementById("payAmountContainer");
-  const item = transactions.find(t => t.id === activeTransactionId);
-  if (!item || !container) return;
-  const remaining = item.total - (item.paidAmount || 0);
-
-  if (status === "Lunas") {
-    container.style.display = "none";
-    const payAmountInput = document.getElementById("payAmountInput");
-    if(payAmountInput) payAmountInput.value = remaining > 0 ? remaining : item.total;
-  } else {
-    container.style.display = "block";
-    const payAmountInput = document.getElementById("payAmountInput");
-    if(payAmountInput) payAmountInput.value = remaining > 0 ? remaining : item.total;
-  }
-}
-
-function closePaymentModal() {
-  document.getElementById("paymentModal").classList.remove("show");
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-  const payForm = document.getElementById("paymentForm");
-  if (payForm) {
-    payForm.addEventListener("submit", function (e) {
-      e.preventDefault();
-      const item = transactions.find(t => t.id === activeTransactionId);
-      if (item) {
-        const payStatus = document.getElementById("payStatusSelect").value;
-        const payMethod = document.getElementById("payMethodSelect").value;
-        const inputAmount = Number(document.getElementById("payAmountInput").value) || 0;
-
-        item.paymentMethod = payMethod;
-
-                if (payStatus === "Lunas") {
-          item.paidAmount = item.total;
-          item.paymentStatus = "Lunas";
-          item.paymentDate = new Date().toISOString();
-        } else if (payStatus === "Belum Lunas") {
-          item.paidAmount = 0;
-          item.paymentStatus = "Belum Lunas";
-          item.paymentDate = null;
-        } else {
-          const currentPaid = item.paidAmount || 0;
-          item.paidAmount = currentPaid + inputAmount;
-          if (item.paidAmount >= item.total) {
-            item.paidAmount = item.total;
-            item.paymentStatus = "Lunas";
-            item.paymentDate = new Date().toISOString();
-          } else {
-            item.paymentStatus = "DP";
-            item.paymentDate = new Date().toISOString();
-          }
-        }
-
-
-        saveData();
-        renderAll();
-        closePaymentModal();
-        openTransactionDetail(activeTransactionId);
-        showToast("Pembayaran berhasil disimpan");
-      }
-    });
-  }
-});
 
 function openServiceModal() {
   const modal = document.getElementById("serviceModal");
@@ -1363,41 +1214,6 @@ function openServiceModal() {
   document.getElementById("btnDeleteService").style.display = "none";
   modal.classList.add("show");
 }
-
-function openAddServiceToTransactionModal() {
-  const searchInput = document.getElementById("serviceSearchInput");
-  if (searchInput) searchInput.value = "";
-  
-  filterServiceSelectionList();
-  document.getElementById("addServiceSelectModal").classList.add("show");
-}
-
-function filterServiceSelectionList() {
-  const query = document.getElementById("serviceSearchInput") ? document.getElementById("serviceSearchInput").value.toLowerCase().trim() : "";
-  const container = document.getElementById("serviceSelectionList");
-  if (!container) return;
-
-  const sortedNames = getSortedServiceNames().filter(name => name.toLowerCase().includes(query));
-  
-  if (sortedNames.length === 0) {
-    container.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--muted); font-size: 13px;">Layanan tidak ditemukan</div>`;
-    return;
-  }
-
-  container.innerHTML = sortedNames.map(name => {
-    const srv = servicePrices[name];
-    return `
-      <div onclick="addServiceToCurrentTransaction('${escapeHTML(name)}')" style="padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <b style="font-size: 14px; color: var(--text);">${escapeHTML(name)}</b>
-          <div style="font-size: 12px; color: var(--muted);">${formatRupiah(srv.price)} / ${srv.unit}</div>
-        </div>
-        <span style="color: var(--primary); font-size: 13px; font-weight: bold;">+ Pilih</span>
-      </div>
-    `;
-  }).join("");
-}
-
 
 function openEditServiceModal(name) {
   const srv = servicePrices[name];
@@ -1463,10 +1279,14 @@ function saveRichService(e) {
     pinned: pinned
   };
 
-  saveData();
+  saveServicesData();
   renderServices();
   closeServiceModal();
   showToast("Layanan berhasil diperbarui");
+}
+
+function saveServicesData() {
+  safeStorage.setItem("arsyServices", JSON.stringify(servicePrices));
 }
 
 function deleteCurrentService() {
@@ -1474,13 +1294,12 @@ function deleteCurrentService() {
   if (!name) return;
   if (confirm(`Hapus layanan "${name}"?`)) {
     delete servicePrices[name];
-    saveData();
+    saveServicesData();
     renderServices();
     closeServiceModal();
     showToast("Layanan berhasil dihapus");
   }
 }
-
 function updateReports() {
   const validTransactions = transactions.filter(item => item.status !== "Batal");
   const totalIncome = validTransactions
@@ -1527,7 +1346,8 @@ function injectReportPaymentMethodFilter() {
     `;
   }
 }
-  function filterReportsData() {
+
+function filterReportsData() {
   const startDate = document.getElementById("reportStartDate");
   const endDate = document.getElementById("reportEndDate");
   const statusVal = document.getElementById("reportStatusFilter");
@@ -1662,6 +1482,38 @@ function openReportDetail(type, title) {
   if (methodVal) methodVal.value = 'semua';
   filterReportsData();
 }
+function loadNotaSettingsUI() {
+  if(document.getElementById("setHideLogo")) document.getElementById("setHideLogo").checked = notaSettings.hideLogo;
+  if(document.getElementById("setHideOutlet")) document.getElementById("setHideOutlet").checked = notaSettings.hideOutlet;
+  if(document.getElementById("setHideAddress")) document.getElementById("setHideAddress").checked = notaSettings.hideAddress;
+  if(document.getElementById("setHideCashier")) document.getElementById("setHideCashier").checked = notaSettings.hideCashier;
+  if(document.getElementById("setHideCustomer")) document.getElementById("setHideCustomer").checked = notaSettings.hideCustomer;
+  if(document.getElementById("setShowCategory")) document.getElementById("setShowCategory").checked = notaSettings.showCategory;
+  if(document.getElementById("setHideMessage")) document.getElementById("setHideMessage").checked = notaSettings.hideMessage;
+  if(document.getElementById("setHideParfum")) document.getElementById("setHideParfum").checked = notaSettings.hideParfum;
+  if(document.getElementById("setHidePowered")) document.getElementById("setHidePowered").checked = notaSettings.hidePowered;
+  if(document.getElementById("setShowEstDay")) document.getElementById("setShowEstDay").checked = notaSettings.showEstDay;
+
+  if(document.getElementById("printerNameLabel")) document.getElementById("printerNameLabel").textContent = notaSettings.printerName;
+  if(document.getElementById("printerMacLabel")) document.getElementById("printerMacLabel").textContent = notaSettings.printerMac;
+}
+
+function saveNotaSettings() {
+  notaSettings.hideLogo = document.getElementById("setHideLogo").checked;
+  notaSettings.hideOutlet = document.getElementById("setHideOutlet").checked;
+  notaSettings.hideAddress = document.getElementById("setHideAddress").checked;
+  notaSettings.hideCashier = document.getElementById("setHideCashier").checked;
+  notaSettings.hideCustomer = document.getElementById("setHideCustomer").checked;
+  notaSettings.showCategory = document.getElementById("setShowCategory").checked;
+  notaSettings.hideMessage = document.getElementById("setHideMessage").checked;
+  notaSettings.hideParfum = document.getElementById("setHideParfum").checked;
+  notaSettings.hidePowered = document.getElementById("setHidePowered").checked;
+  notaSettings.showEstDay = document.getElementById("setShowEstDay").checked;
+
+  safeStorage.setItem("arsyNotaSettings", JSON.stringify(notaSettings));
+  saveData();
+  showToast("Pengaturan nota disimpan");
+}
 
 function toggleDetailMenu() {
   const menu = document.getElementById("detailMenuDropdown");
@@ -1679,6 +1531,7 @@ function closeCancelModal() { document.getElementById("cancelModal").classList.r
 function openPrinterSettingModal() {
   document.getElementById("printerSettingModal").classList.add("show");
 }
+
 function closePrinterSettingModal() {
   document.getElementById("printerSettingModal").classList.remove("show");
 }
@@ -1774,23 +1627,6 @@ function closePreviewNotaModal() {
   document.getElementById("previewNotaModal").classList.remove("show");
 }
 
-document.querySelectorAll(".modal").forEach(modal => {
-    modal.addEventListener("click", function (event) {
-        if (event.target === this) this.classList.remove("show");
-    });
-});
-
-function showToast(message) {
-  const toast = document.getElementById("toast");
-  if(!toast) return;
-  toast.textContent = message;
-  toast.classList.add("show");
-  setTimeout(function () { toast.classList.remove("show"); }, 2500);
-}
-
-function escapeHTML(text) {
-  return String(text).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
-                                                             }
 function generateWhatsAppReceiptText(item) {
   let text = "";
   if (!notaSettings.hideLogo) text += `*[ LOGO ${arsyOutlet.name} ]*\n\n`;
@@ -1835,9 +1671,8 @@ function sendWhatsAppReceipt(id) {
   
   const url = `intent://send?text=${encodeURIComponent(text)}#Intent;package=com.whatsapp.w4b;scheme=whatsapp;end`;
   window.open(url, '_top'); 
-}
-
-function openTransactionDetail(id) {
+    }
+  function openTransactionDetail(id) {
   activeTransactionId = id;
   const item = transactions.find(t => t.id === id);
   if (!item) return;
@@ -1931,15 +1766,9 @@ function openTransactionDetail(id) {
       </div>
     </div>
 
-        <button type="button" class="submit-button" style="background: var(--success); margin-bottom: 12px;" onclick="openPaymentModal(${item.id})">
+    <button type="button" class="submit-button" style="background: var(--success); margin-bottom: 12px;" onclick="openPaymentModal(${item.id})">
       Bayar
     </button>
-
-    ${(isLunas || isDP) ? `
-    <button type="button" class="submit-button" style="background: #dc2626; margin-bottom: 12px;" onclick="openCancelPaymentModal(${item.id})">
-      Batalkan Pembayaran
-    </button>` : ''}
-
 
     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
       <button type="button" class="submit-button" style="flex: 1; background: #475569;" onclick="printReceipt(${item.id})">Cetak Nota</button>
@@ -2149,70 +1978,155 @@ function verifyPin() {
   } else {
     showToast("PIN salah!");
   }
-      }
-function openCancelPaymentModal(id) {
+         }
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  if(!toast) return;
+  toast.textContent = message;
+  toast.classList.add("show");
+  setTimeout(function () { toast.classList.remove("show"); }, 2500);
+}
+
+function escapeHTML(text) {
+  return String(text).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+}
+
+function injectPaymentModalHTML() {
+  let modalEl = document.getElementById("paymentModal");
+  if (!modalEl) {
+    modalEl = document.createElement("div");
+    modalEl.id = "paymentModal";
+    modalEl.className = "modal";
+    document.body.appendChild(modalEl);
+  }
+  modalEl.innerHTML = `
+    <div class="modal-content" style="background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 400px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="font-size:18px; font-weight:bold; color:var(--text);">Pembayaran</h3>
+        <button type="button" onclick="closePaymentModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted);">&times;</button>
+      </div>
+      <form id="paymentForm">
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 13px; color: var(--muted); display: block;">Total Tagihan / Sisa</label>
+          <h3 id="payTotalText" style="font-size: 18px; font-weight: bold; color: var(--primary);">Rp 0</h3>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px; color: var(--text);">Status Pembayaran</label>
+          <select id="payStatusSelect" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;" onchange="handlePayStatusChange()">
+            <option value="DP">DP</option>
+            <option value="Lunas">Lunas</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px; color: var(--text);">Metode Pembayaran</label>
+          <select id="payMethodSelect" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
+            <option value="Tunai">Tunai</option>
+            <option value="GoPay">GoPay</option>
+            <option value="Dana">Dana</option>
+            <option value="ShopeePay">ShopeePay</option>
+            <option value="QRIS">QRIS</option>
+            <option value="Transfer">Transfer</option>
+            <option value="Deposit">Deposit</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 12px;" id="payAmountContainer">
+          <label style="font-size: 13px; font-weight: bold; display: block; margin-bottom: 4px; color: var(--text);">Jumlah Pembayaran (DP)</label>
+          <input type="number" id="payAmountInput" placeholder="0" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
+        </div>
+
+        <button type="submit" class="submit-button" style="background: var(--success); color: white; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">Bayar</button>
+      </form>
+    </div>
+  `;
+}
+
+function openPaymentModal(id) {
   activeTransactionId = id;
   const item = transactions.find(t => t.id === id);
   if (!item) return;
-  
-  if (confirm("Batalkan pembayaran untuk transaksi ini? Status akan kembali menjadi Belum Lunas.")) {
-    item.paymentStatus = "Belum Lunas";
-    item.paidAmount = 0;
-    item.paymentMethod = "-";
-    item.paymentDate = null;
-    
-    saveData();
-    renderAll();
-    openTransactionDetail(id);
-    showToast("Pembayaran berhasil dibatalkan");
+
+  const remaining = item.total - (item.paidAmount || 0);
+  const payTotalText = document.getElementById("payTotalText");
+  if(payTotalText) payTotalText.textContent = formatRupiah(remaining > 0 ? remaining : item.total);
+
+  const payAmountInput = document.getElementById("payAmountInput");
+  if(payAmountInput) payAmountInput.value = remaining > 0 ? remaining : item.total;
+
+  const payStatusSelect = document.getElementById("payStatusSelect");
+  if(payStatusSelect) {
+    payStatusSelect.value = "DP";
+    handlePayStatusChange();
+  }
+
+  const payMethodSelect = document.getElementById("payMethodSelect");
+  if (payMethodSelect && item.paymentMethod && item.paymentMethod !== "-") {
+    payMethodSelect.value = item.paymentMethod;
+  }
+
+  document.getElementById("paymentModal").classList.add("show");
+}
+
+function handlePayStatusChange() {
+  const status = document.getElementById("payStatusSelect").value;
+  const container = document.getElementById("payAmountContainer");
+  const item = transactions.find(t => t.id === activeTransactionId);
+  if (!item || !container) return;
+  const remaining = item.total - (item.paidAmount || 0);
+
+  if (status === "Lunas") {
+    container.style.display = "none";
+    const payAmountInput = document.getElementById("payAmountInput");
+    if(payAmountInput) payAmountInput.value = remaining > 0 ? remaining : item.total;
+  } else {
+    container.style.display = "block";
+    const payAmountInput = document.getElementById("payAmountInput");
+    if(payAmountInput) payAmountInput.value = remaining > 0 ? remaining : item.total;
   }
 }
 
-function openAddServiceToTransactionModal() {
-  const searchInput = document.getElementById("serviceSearchInput");
-  if (searchInput) {
-    searchInput.value = "";
-  }
-  
-  const modal = document.getElementById("addServiceSelectModal");
-  if (modal) {
-    modal.classList.add("show");
-    if (typeof filterServiceSelectionList === "function") {
-      filterServiceSelectionList();
-    }
-  }
+function closePaymentModal() {
+  document.getElementById("paymentModal").classList.remove("show");
 }
 
-function filterServiceSelectionList() {
-  try {
-    const searchInput = document.getElementById("serviceSearchInput");
-    const query = searchInput && searchInput.value ? searchInput.value.toLowerCase().trim() : "";
-    const container = document.getElementById("serviceSelectionList");
-    if (!container) return;
+document.addEventListener("DOMContentLoaded", function () {
+  const payForm = document.getElementById("paymentForm");
+  if (payForm) {
+    payForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const item = transactions.find(t => t.id === activeTransactionId);
+      if (item) {
+        const payStatus = document.getElementById("payStatusSelect").value;
+        const payMethod = document.getElementById("payMethodSelect").value;
+        const inputAmount = Number(document.getElementById("payAmountInput").value) || 0;
 
-    const pricesObj = typeof servicePrices !== "undefined" ? servicePrices : {};
-    const names = Object.keys(pricesObj);
-    const sortedNames = names.filter(name => name.toLowerCase().includes(query));
+        item.paymentMethod = payMethod;
 
-    if (sortedNames.length === 0) {
-      container.innerHTML = `<div style="text-align: center; padding: 20px; color: #888; font-size: 13px;">Layanan tidak ditemukan</div>`;
-      return;
-    }
+        if (payStatus === "Lunas") {
+          item.paidAmount = item.total;
+          item.paymentStatus = "Lunas";
+          item.paymentDate = new Date().toISOString();
+        } else {
+          const currentPaid = item.paidAmount || 0;
+          item.paidAmount = currentPaid + inputAmount;
+          if (item.paidAmount >= item.total) {
+            item.paidAmount = item.total;
+            item.paymentStatus = "Lunas";
+            item.paymentDate = new Date().toISOString();
+          } else {
+            item.paymentStatus = "DP";
+            item.paymentDate = new Date().toISOString();
+          }
+        }
 
-    container.innerHTML = sortedNames.map(name => {
-      const srv = pricesObj[name] || {};
-      const priceStr = typeof formatRupiah === "function" ? formatRupiah(srv.price || 0) : (srv.price || 0);
-      return `
-        <div onclick="addServiceToCurrentTransaction('${name.replace(/'/g, "\\'")}')" style="padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <b style="font-size: 14px; color: #333;">${name}</b>
-            <div style="font-size: 12px; color: #666;">${priceStr} / ${srv.unit || ''}</div>
-          </div>
-          <span style="color: #007bff; font-size: 13px; font-weight: bold;">+ Pilih</span>
-        </div>
-      `;
-    }).join("");
-  } catch (err) {
-    console.error("Filter error:", err);
+        saveData();
+        renderAll();
+        closePaymentModal();
+        openTransactionDetail(activeTransactionId);
+        showToast("Pembayaran berhasil disimpan");
+      }
+    });
   }
-}
+});
