@@ -1095,7 +1095,8 @@ function setupDashboardInteractions() {
     const el = document.getElementById(id);
     if (!el) return;
     
-    const card = el.parentElement.parentElement.children.length <= 3 ? el.parentElement.parentElement : el.parentElement;
+    // Menggunakan .closest('.stat-card') agar langsung mendeteksi kartu statistik di index.html tanpa meleset[span_1](start_span)[span_1](end_span)
+    let card = el.closest('.stat-card') || el.parentElement;
     if (card) {
       card.style.cursor = 'pointer';
       card.onclick = (e) => {
@@ -1105,6 +1106,7 @@ function setupDashboardInteractions() {
     }
   });
 }
+
 
 function renderServices() {
   const element = document.getElementById("servicesList");
