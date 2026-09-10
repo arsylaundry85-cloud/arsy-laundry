@@ -336,35 +336,30 @@ function injectTransactionModalHTML() {
     subModal.id = "addServiceSelectModal";
     subModal.className = "modal";
     subModal.innerHTML = `
-      <div class="modal-content" style="background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 350px; max-height: 80vh; overflow-y: auto;">
+      <div class="modal-content" style="background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 350px; max-height: 80vh; display: flex; flex-direction: column;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <h3 style="font-size:16px; font-weight:bold; color:var(--text);">Pilih Layanan</h3>
           <button type="button" onclick="closeAddServiceSelectModal()" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--muted);">&times;</button>
         </div>
-        <div id="serviceSelectionList"></div>
+        <div style="margin-bottom: 12px; position: relative;">
+          <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--muted);">🔍</span>
+          <input type="text" id="serviceSearchInputModal" placeholder="Cari layanan..." style="width: 100%; padding: 10px 10px 10px 32px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none;" onkeyup="filterServiceSelectionList()">
+        </div>
+        <div id="serviceSelectionList" style="overflow-y: auto; flex: 1;"></div>
       </div>
     `;
     document.body.appendChild(subModal);
   }
 }
 
+
 function openAddServiceToTransactionModal() {
-  const container = document.getElementById("serviceSelectionList");
-  if (!container) return;
-  const sortedNames = getSortedServiceNames();
-  container.innerHTML = sortedNames.map(name => {
-    const srv = servicePrices[name];
-    return `
-      <div onclick="addServiceToCurrentTransaction('${escapeHTML(name)}')" style="padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <b style="font-size: 14px; color: var(--text);">${escapeHTML(name)}</b>
-          <div style="font-size: 12px; color: var(--muted);">${formatRupiah(srv.price)} / ${srv.unit}</div>
-        </div>
-        <span style="color: var(--primary); font-size: 13px; font-weight: bold;">+ Pilih</span>
-      </div>
-    `;
-  }).join("");
-  document.getElementById("addServiceSelectModal").classList.add("show");
+  const modal = document.getElementById("addServiceSelectModal");
+  const input = document.getElementById("serviceSearchInputModal");
+  if(input) input.value = "";
+  modal.dataset.target = "new";
+  filterServiceSelectionList();
+  modal.classList.add("show");
 }
 
 function closeAddServiceSelectModal() {
@@ -580,23 +575,46 @@ function deleteTransactionItem(txId, itemIdx) {
 
 function openAddServiceToExistingTransactionModal(txId) {
   activeTransactionId = txId;
+  const modal = document.getElementById("addServiceSelectModal");
+  const input = document.getElementById("serviceSearchInputModal");
+  if(input) input.value = "";
+  modal.dataset.target = "existing";
+  filterServiceSelectionList();
+  modal.classList.add("show");
+}
+function filterServiceSelectionList() {
+  const input = document.getElementById("serviceSearchInputModal");
   const container = document.getElementById("serviceSelectionList");
-  if (!container) return;
-  const sortedNames = getSortedServiceNames();
+  if (!input || !container) return;
+  
+  const query = input.value.toLowerCase().trim();
+  const sortedNames = getSortedServiceNames().filter(name => name.toLowerCase().includes(query));
+  
+  if (sortedNames.length === 0) {
+    container.innerHTML = `<div style="text-align: center; padding: 15px; color: var(--muted); font-size: 13px;">Layanan tidak ditemukan</div>`;
+    return;
+  }
+
+  const isExisting = document.getElementById("addServiceSelectModal").dataset.target === "existing";
+
   container.innerHTML = sortedNames.map(name => {
     const srv = servicePrices[name];
+    const onClickAction = isExisting 
+      ? `addServiceToExistingTransactionConfirm('${escapeHTML(name)}')` 
+      : `addServiceToCurrentTransaction('${escapeHTML(name)}')`;
+    
     return `
-      <div onclick="addServiceToExistingTransactionConfirm('${escapeHTML(name)}')" style="padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+      <div onclick="${onClickAction}" style="padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
         <div>
           <b style="font-size: 14px; color: var(--text);">${escapeHTML(name)}</b>
           <div style="font-size: 12px; color: var(--muted);">${formatRupiah(srv.price)} / ${srv.unit}</div>
         </div>
-        <span style="color: var(--primary); font-size: 13px; font-weight: bold;">+ Tambah</span>
+        <span style="color: var(--primary); font-size: 13px; font-weight: bold;">+ Pilih</span>
       </div>
     `;
   }).join("");
-  document.getElementById("addServiceSelectModal").classList.add("show");
 }
+
 
 function addServiceToExistingTransactionConfirm(serviceName) {
   const tx = transactions.find(t => t.id === activeTransactionId);
