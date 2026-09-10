@@ -1287,6 +1287,7 @@ function saveRichService(e) {
 
 function saveServicesData() {
   safeStorage.setItem("arsyServices", JSON.stringify(servicePrices));
+saveData();
 }
 
 function deleteCurrentService() {
